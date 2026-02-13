@@ -1,6 +1,7 @@
 import os
 
 from src.core.app_controller import MixionApp
+from src.core.database import init_database
 
 
 def _resolve_video_path():
@@ -9,5 +10,6 @@ def _resolve_video_path():
 
 
 if __name__ == "__main__":
+    init_database()
     app = MixionApp(video_path=_resolve_video_path())
     app.run()
