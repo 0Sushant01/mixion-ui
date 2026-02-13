@@ -43,7 +43,8 @@ mixion-ui/
 ## Requirements
 
 - Python 3.9+ recommended
-- OpenCV and Pillow (listed in requirements.txt)
+- VLC media player installed on system
+- python-vlc (listed in requirements.txt)
 
 ## Setup
 
@@ -81,9 +82,25 @@ macOS / Linux:
 source venv/bin/activate
 ```
 
-### 3) Install dependencies
+### 3) Install VLC media player
 
+**Raspberry Pi / Linux:**
+```bash
+sudo apt-get update
+sudo apt-get install vlc
 ```
+
+**Windows:**
+Download and install from https://www.videolan.org/vlc/
+
+**macOS:**
+```bash
+brew install vlc
+```
+
+### 4) Install Python dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -122,6 +139,9 @@ python db.py
 - Manage bottles, drinks, recipes
 
 See [Database Manager Guide](docs/DATABASE_MANAGER_GUIDE.md) for detailed usage instructions.
+
+## Database Management
+
 ### Database Schema
 
 The app uses SQLite (`database/mixion.db`) for data storage. The database is automatically created and migrated on first run.
@@ -139,24 +159,7 @@ On first boot, the database is populated with:
 - 3 default bottles (Bottle A, B, C)
 - Custom pour limits (0-150ml per bottle)
 
-### Programming Examplesin/max ml per bottle)
-
-This is an **operator/developer tool** - not the customer-facing kiosk UI.
-
-### Database Schema
-
-- **bottles**: Defines installed liquids (name, position, enabled status)
-- **drinks**: Predefined menu items (name, price, active status)
-- **recipes**: Ingredient mapping for drinks (drink_id, bottle_id, amount_ml)
-- **custom_limits**: Safety limits for custom pour (min_ml, max_ml per bottle)
-
-### Default Data
-
-On first boot, the database is populated with:
-- 3 default bottles (Bottle A, B, C)
-- Custom pour limits (0-150ml per bottle)
-
-### Working with the Database
+### Programming Examples
 
 See `examples/database_usage.py` for code examples on:
 - Reading bottles
@@ -169,15 +172,21 @@ python examples/database_usage.py
 ```
 ```
 
-## Adding Video and Audio
+## Adding Video
 
-1. Place your promo video (with audio) at `assets/video/promo.mp4`
-2. The app will automatically extract and play audio from the MP4 file on startup
+1. Place your promo video (MP4 with audio) at `assets/video/promo.mp4`
+2. The video will automatically play with audio on startup
+
+**Requirements:**
+- Video format: MP4
+- Audio: Included in the video file
+- The video fills the entire screen and loops continuously
 
 ## Notes
 
-- The app runs in fullscreen mode and is designed for a touchscreen kiosk.
-- Audio and video play in sync and loop continuously on the splash screen.
+- The app runs in fullscreen mode and is designed for a touchscreen kiosk
+- Video playback uses VLC for reliable audio/video synchronization
+- Database is automatically created and migrated on first run
 
 ## Roadmap (Future)
 

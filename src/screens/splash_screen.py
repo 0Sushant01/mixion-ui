@@ -1,13 +1,12 @@
+import platform
 import tkinter as tk
-
-import cv2
-from PIL import Image, ImageTk
 
 try:
     import vlc
     VLC_AVAILABLE = True
 except ImportError:
     VLC_AVAILABLE = False
+    print("Warning: python-vlc not installed. Video playback disabled.")
 
 
 class SplashScreen(tk.Frame):
@@ -15,106 +14,74 @@ class SplashScreen(tk.Frame):
         super().__init__(parent, bg="black")
         self.controller = controller
         self.video_path = video_path
-        self.cap = None
-        self.vlc_player = None
-        self.vlc_instance = None
-        self.running = False
-        self.after_id = None
-        self.frame_delay_ms = 33
-        
-        self._init_vlc_audio()
+        self.player = None
+        self.instance = None
 
-        self.label = tk.Label(self, bg="black")
-        self.label.pack(fill="both", expand=True)
+        self.video_frame = tk.Frame(self, bg="black")
+        self.video_frame.pack(fill="both", expand=True)
 
-        self.label.bind("<Button-1>", self.on_touch)
+        self.video_frame.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
 
-    def _init_vlc_audio(self):
-        if not VLC_AVAILABLE:
-            print("Warning: python-vlc not available, audio playback disabled")
-            return
+        if VLC_AVAILABLE:
+            self._init_vlc()
+        else:
+            self._show_error_message()
+
+    def _init_vlc(self):
         try:
-            self.vlc_instance = vlc.Instance('--no-xlib --vout=none --no-video')
-            self.vlc_player = self.vlc_instance.media_player_new()
-            media = self.vlc_instance.media_new(self.video_path)
-            self.vlc_player.set_media(media)
-            self.vlc_player.audio_set_volume(100)
-            print("VLC audio initialized successfully (audio-only mode)")
+            self.instance = vlc.Instance('--no-xlib')
+            self.player = self.instance.media_player_new()
+            
+            media = self.instance.media_new(self.video_path)
+            media.add_option('input-repeat=65535')
+            
+            self.player.set_media(media)
+            self.player.audio_set_volume(100)
+            
+            print(f"VLC initialized: {self.video_path}")
         except Exception as e:
-            print(f"Warning: Could not initialize VLC audio: {e}")
-            self.vlc_player = None
+            print(f"Error initializing VLC: {e}")
+            self._show_error_message()
+
+    def _show_error_message(self):
+        label = tk.Label(
+            self.video_frame,
+            text="Video playback unavailable\n\nInstall VLC and python-vlc\n\nTap to continue",
+            fg="white",
+            bg="black",
+            font=("Arial", 16),
+        )
+        label.pack(expand=True)
 
     def start(self):
-        if self.running:
+        if not self.player:
             return
-        self.running = True
-        self.cap = cv2.VideoCapture(self.video_path)
-        self._set_frame_delay()
-        self._start_audio()
-        self._update_frame()
 
-    def _start_audio(self):
-        if self.vlc_player is None:
-            return
+        self.video_frame.update()
+        
         try:
-            self.vlc_player.play()
+            if platform.system() == "Windows":
+                self.player.set_hwnd(self.video_frame.winfo_id())
+            elif platform.system() == "Linux":
+                self.player.set_xwindow(self.video_frame.winfo_id())
+            elif platform.system() == "Darwin":
+                self.player.set_nsobject(self.video_frame.winfo_id())
+            
+            self.player.play()
+            print("Video playback started")
         except Exception as e:
-            print(f"Warning: Could not start audio playback: {e}")
+            print(f"Error starting playback: {e}")
 
     def stop(self):
-        self.running = False
-        if self.after_id is not None:
-            self.after_cancel(self.after_id)
-            self.after_id = None
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
-        self._stop_audio()
-        self.label.configure(image="")
-        self.label.image = None
-
-    def _stop_audio(self):
-        if self.vlc_player is None:
+        if not self.player:
             return
+        
         try:
-            self.vlc_player.stop()
-        except Exception:
-            pass
+            self.player.stop()
+            print("Video playback stopped")
+        except Exception as e:
+            print(f"Error stopping playback: {e}")
 
     def on_touch(self, _event=None):
         self.controller.show_screen("menu")
-
-    def _set_frame_delay(self):
-        if self.cap is None:
-            return
-        fps = self.cap.get(cv2.CAP_PROP_FPS)
-        if fps and fps > 0:
-            self.frame_delay_ms = max(15, int(1000 / fps))
-
-    def _update_frame(self):
-        if not self.running or self.cap is None:
-            return
-
-        success, frame = self.cap.read()
-        if not success:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            if self.vlc_player:
-                try:
-                    self.vlc_player.stop()
-                    self.vlc_player.play()
-                except Exception:
-                    pass
-            success, frame = self.cap.read()
-
-        if success:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            screen_w = self.winfo_screenwidth()
-            screen_h = self.winfo_screenheight()
-            frame = cv2.resize(frame, (screen_w, screen_h), interpolation=cv2.INTER_AREA)
-            image = Image.fromarray(frame)
-            photo = ImageTk.PhotoImage(image)
-            self.label.configure(image=photo)
-            self.label.image = photo
-
-        self.after_id = self.after(self.frame_delay_ms, self._update_frame)
