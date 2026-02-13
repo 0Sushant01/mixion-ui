@@ -78,10 +78,15 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Adding Video and Audio
+
+1. Place your promo video (with audio) at `assets/video/promo.mp4`
+2. The app will automatically extract and play audio from the MP4 file on startup
+
 ## Notes
 
-- Place the promo video at `assets/video/promo.mp4`.
 - The app runs in fullscreen mode and is designed for a touchscreen kiosk.
+- Audio and video play in sync and loop continuously on the splash screen.
 
 ## Roadmap (Future)
 

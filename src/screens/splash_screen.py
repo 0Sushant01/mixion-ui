@@ -1,7 +1,10 @@
+import os
+import tempfile
 import tkinter as tk
 
 import cv2
 import pygame
+from moviepy.editor import VideoFileClip
 from PIL import Image, ImageTk
 
 
@@ -10,6 +13,8 @@ class SplashScreen(tk.Frame):
         super().__init__(parent, bg="black")
         self.controller = controller
         self.video_path = video_path
+        self.audio_path = None
+        self.temp_audio_file = None
         self.cap = None
         self.running = False
         self.after_id = None
@@ -17,6 +22,7 @@ class SplashScreen(tk.Frame):
         self.audio_initialized = False
         
         self._init_audio()
+        self._extract_audio_from_video()
 
         self.label = tk.Label(self, bg="black")
         self.label.pack(fill="both", expand=True)
@@ -32,6 +38,30 @@ class SplashScreen(tk.Frame):
             print(f"Warning: Could not initialize audio: {e}")
             self.audio_initialized = False
 
+    def _extract_audio_from_video(self):
+        if not self.audio_initialized:
+            return
+        try:
+            print(f"Extracting audio from {self.video_path}...")
+            video = VideoFileClip(self.video_path)
+            
+            if video.audio is None:
+                print("Warning: Video has no audio track")
+                return
+            
+            self.temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+            temp_path = self.temp_audio_file.name
+            self.temp_audio_file.close()
+            
+            video.audio.write_audiofile(temp_path, logger=None, verbose=False)
+            video.close()
+            
+            self.audio_path = temp_path
+            print(f"Audio extracted to temporary file")
+        except Exception as e:
+            print(f"Warning: Could not extract audio from video: {e}")
+            self.audio_path = None
+
     def start(self):
         if self.running:
             return
@@ -42,10 +72,10 @@ class SplashScreen(tk.Frame):
         self._update_frame()
 
     def _start_audio(self):
-        if not self.audio_initialized:
+        if not self.audio_initialized or not self.audio_path:
             return
         try:
-            pygame.mixer.music.load(self.video_path)
+            pygame.mixer.music.load(self.audio_path)
             pygame.mixer.music.play(loops=-1)
         except Exception as e:
             print(f"Warning: Could not play audio: {e}")
@@ -59,8 +89,17 @@ class SplashScreen(tk.Frame):
             self.cap.release()
             self.cap = None
         self._stop_audio()
+        self._cleanup_temp_audio()
         self.label.configure(image="")
         self.label.image = None
+
+    def _cleanup_temp_audio(self):
+        if self.audio_path and os.path.exists(self.audio_path):
+            try:
+                os.unlink(self.audio_path)
+                self.audio_path = None
+            except Exception:
+                pass
 
     def _stop_audio(self):
         if not self.audio_initialized:
