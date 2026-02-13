@@ -1,4 +1,3 @@
 opencv-python
 Pillow
-pygame
-moviepy
+python-vlc

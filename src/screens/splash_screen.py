@@ -1,11 +1,13 @@
-import os
-import tempfile
 import tkinter as tk
 
 import cv2
-import pygame
-from moviepy.editor import VideoFileClip
 from PIL import Image, ImageTk
+
+try:
+    import vlc
+    VLC_AVAILABLE = True
+except ImportError:
+    VLC_AVAILABLE = False
 
 
 class SplashScreen(tk.Frame):
@@ -13,16 +15,14 @@ class SplashScreen(tk.Frame):
         super().__init__(parent, bg="black")
         self.controller = controller
         self.video_path = video_path
-        self.audio_path = None
-        self.temp_audio_file = None
         self.cap = None
+        self.vlc_player = None
+        self.vlc_instance = None
         self.running = False
         self.after_id = None
         self.frame_delay_ms = 33
-        self.audio_initialized = False
         
-        self._init_audio()
-        self._extract_audio_from_video()
+        self._init_vlc_audio()
 
         self.label = tk.Label(self, bg="black")
         self.label.pack(fill="both", expand=True)
@@ -30,37 +30,20 @@ class SplashScreen(tk.Frame):
         self.label.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
 
-    def _init_audio(self):
-        try:
-            pygame.mixer.init()
-            self.audio_initialized = True
-        except Exception as e:
-            print(f"Warning: Could not initialize audio: {e}")
-            self.audio_initialized = False
-
-    def _extract_audio_from_video(self):
-        if not self.audio_initialized:
+    def _init_vlc_audio(self):
+        if not VLC_AVAILABLE:
+            print("Warning: python-vlc not available, audio playback disabled")
             return
         try:
-            print(f"Extracting audio from {self.video_path}...")
-            video = VideoFileClip(self.video_path)
-            
-            if video.audio is None:
-                print("Warning: Video has no audio track")
-                return
-            
-            self.temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-            temp_path = self.temp_audio_file.name
-            self.temp_audio_file.close()
-            
-            video.audio.write_audiofile(temp_path, logger=None, verbose=False)
-            video.close()
-            
-            self.audio_path = temp_path
-            print(f"Audio extracted to temporary file")
+            self.vlc_instance = vlc.Instance('--no-xlib')
+            self.vlc_player = self.vlc_instance.media_player_new()
+            media = self.vlc_instance.media_new(self.video_path)
+            self.vlc_player.set_media(media)
+            self.vlc_player.audio_set_volume(100)
+            print("VLC audio initialized successfully")
         except Exception as e:
-            print(f"Warning: Could not extract audio from video: {e}")
-            self.audio_path = None
+            print(f"Warning: Could not initialize VLC audio: {e}")
+            self.vlc_player = None
 
     def start(self):
         if self.running:
@@ -72,13 +55,12 @@ class SplashScreen(tk.Frame):
         self._update_frame()
 
     def _start_audio(self):
-        if not self.audio_initialized or not self.audio_path:
+        if self.vlc_player is None:
             return
         try:
-            pygame.mixer.music.load(self.audio_path)
-            pygame.mixer.music.play(loops=-1)
+            self.vlc_player.play()
         except Exception as e:
-            print(f"Warning: Could not play audio: {e}")
+            print(f"Warning: Could not start audio playback: {e}")
 
     def stop(self):
         self.running = False
@@ -89,23 +71,14 @@ class SplashScreen(tk.Frame):
             self.cap.release()
             self.cap = None
         self._stop_audio()
-        self._cleanup_temp_audio()
         self.label.configure(image="")
         self.label.image = None
 
-    def _cleanup_temp_audio(self):
-        if self.audio_path and os.path.exists(self.audio_path):
-            try:
-                os.unlink(self.audio_path)
-                self.audio_path = None
-            except Exception:
-                pass
-
     def _stop_audio(self):
-        if not self.audio_initialized:
+        if self.vlc_player is None:
             return
         try:
-            pygame.mixer.music.stop()
+            self.vlc_player.stop()
         except Exception:
             pass
 
@@ -126,6 +99,12 @@ class SplashScreen(tk.Frame):
         success, frame = self.cap.read()
         if not success:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            if self.vlc_player:
+                try:
+                    self.vlc_player.stop()
+                    self.vlc_player.play()
+                except Exception:
+                    pass
             success, frame = self.cap.read()
 
         if success:
