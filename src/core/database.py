@@ -124,6 +124,12 @@ class Database:
             cursor.execute("SELECT * FROM bottles ORDER BY position")
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_enabled_bottles(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM bottles WHERE enabled = 1 ORDER BY position")
+            return [dict(row) for row in cursor.fetchall()]
+
     def add_bottle(self, name, position):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -224,6 +230,13 @@ class Database:
                 ORDER BY b.position
             """)
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_limits_map(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT bottle_id, min_ml, max_ml FROM custom_limits")
+            rows = cursor.fetchall()
+            return {row["bottle_id"]: {"min_ml": row["min_ml"], "max_ml": row["max_ml"]} for row in rows}
 
     def update_limit(self, bottle_id, min_ml, max_ml):
         with self.get_connection() as conn:

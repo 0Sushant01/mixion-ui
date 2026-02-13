@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from src.screens.custom_screen import CustomMixScreen
 from src.screens.menu_screen import MenuScreen
 from src.screens.splash_screen import SplashScreen
 
@@ -17,6 +18,7 @@ class MixionApp(tk.Tk):
         self._screens = {
             "splash": SplashScreen(self._container, self, video_path=video_path),
             "menu": MenuScreen(self._container, self),
+            "custom": CustomMixScreen(self._container, self),
         }
 
         for screen in self._screens.values():
