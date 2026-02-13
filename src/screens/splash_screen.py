@@ -35,12 +35,12 @@ class SplashScreen(tk.Frame):
             print("Warning: python-vlc not available, audio playback disabled")
             return
         try:
-            self.vlc_instance = vlc.Instance('--no-xlib')
+            self.vlc_instance = vlc.Instance('--no-xlib --vout=none --no-video')
             self.vlc_player = self.vlc_instance.media_player_new()
             media = self.vlc_instance.media_new(self.video_path)
             self.vlc_player.set_media(media)
             self.vlc_player.audio_set_volume(100)
-            print("VLC audio initialized successfully")
+            print("VLC audio initialized successfully (audio-only mode)")
         except Exception as e:
             print(f"Warning: Could not initialize VLC audio: {e}")
             self.vlc_player = None
