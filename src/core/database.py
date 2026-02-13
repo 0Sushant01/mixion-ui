@@ -153,6 +153,12 @@ class Database:
             cursor.execute("SELECT * FROM drinks ORDER BY name")
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_active_drinks(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM drinks WHERE active = 1 ORDER BY name")
+            return [dict(row) for row in cursor.fetchall()]
+
     def add_drink(self, name, price, active=1):
         with self.get_connection() as conn:
             cursor = conn.cursor()

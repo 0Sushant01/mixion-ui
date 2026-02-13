@@ -29,7 +29,10 @@ class MixionApp(tk.Tk):
             self._screens["splash"].stop()
         if name == "splash":
             self._screens["splash"].start()
-        self._screens[name].tkraise()
+        screen = self._screens[name]
+        if hasattr(screen, "refresh"):
+            screen.refresh()
+        screen.tkraise()
 
     def run(self):
         self.mainloop()
