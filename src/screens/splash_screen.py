@@ -36,32 +36,28 @@ class SplashScreen(tk.Frame):
         else:
             self._show_error_message()
         
-        # Create clickable button overlay AFTER video (so it's on top)
-        # This button will be visible and always clickable, even over video
-        self.skip_button = tk.Button(
-            self,
-            text="TAP TO CONTINUE ➜",
-            font=("Arial", 18, "bold"),
-            fg="white",
-            bg="#333333",
-            activebackground="#555555",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            command=self.on_touch,
-            padx=40,
-            pady=15,
-            borderwidth=2,
-            highlightbackground="white",
-            highlightthickness=2
-        )
-        # Place button at bottom center, on top of everything
-        self.skip_button.place(relx=0.5, rely=0.92, anchor="center")
+        # Create TRANSPARENT overlay frame that covers ENTIRE screen
+        # This frame sits ON TOP of the video and captures all touch/click events
+        self.touch_overlay = tk.Frame(self, bg="black")
+        self.touch_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
         
-        # Also bind click to the frame itself (backup)
+        # Make overlay semi-transparent by using a label with text
+        self.instruction_label = tk.Label(
+            self.touch_overlay,
+            text="TAP ANYWHERE TO CONTINUE",
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="black",
+            cursor="hand2"
+        )
+        self.instruction_label.pack(side="bottom", pady=50)
+        
+        # Bind click events to ENTIRE overlay frame
+        self.touch_overlay.bind("<Button-1>", self.on_touch)
+        self.instruction_label.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
         
-        # Add keyboard shortcut for testing
+        # Add keyboard shortcuts
         self.bind("<space>", self.on_touch)
         self.bind("<Return>", self.on_touch)
 
@@ -112,12 +108,12 @@ class SplashScreen(tk.Frame):
         self.canvas.delete("all")
         self.canvas.create_text(
             400, 300,
-            text="Video playback unavailable\n\nInstall MPV and python-mpv\n\nClick button below to continue",
+            text="Video playback unavailable\n\nInstall MPV and python-mpv",
             font=("Arial", 16),
             fill="white",
             justify="center"
         )
-        # Button is still clickable even without video
+        # Overlay is still clickable even without video - entire screen works!
 
     def start(self):
         """Called when screen is shown"""
@@ -128,8 +124,8 @@ class SplashScreen(tk.Frame):
         
         print(f"Canvas size: {width}x{height}")
         
-        # Make sure button is on top and visible
-        self.skip_button.lift()
+        # Make sure overlay is on top and captures all events
+        self.touch_overlay.lift()
         
         if not self.player:
             return
@@ -140,21 +136,21 @@ class SplashScreen(tk.Frame):
                 self.player.pause = False
             print("Video playback started/resumed")
             
-            # Animate the button to draw attention
-            self._animate_button()
+            # Animate the instruction label to draw attention
+            self._animate_label()
         except Exception as e:
             print(f"Error starting playback: {e}")
     
-    def _animate_button(self):
-        """Pulse animation for skip button"""
+    def _animate_label(self):
+        """Pulse animation for instruction label"""
         try:
-            current_bg = self.skip_button.cget("bg")
-            # Toggle between dark gray and slightly lighter gray
-            new_bg = "#444444" if current_bg == "#333333" else "#333333"
-            self.skip_button.config(bg=new_bg)
+            current_fg = self.instruction_label.cget("fg")
+            # Toggle between white and light gray
+            new_fg = "#CCCCCC" if current_fg == "white" else "white"
+            self.instruction_label.config(fg=new_fg)
             
             # Repeat animation every 600ms
-            self.after(600, self._animate_button)
+            self.after(600, self._animate_label)
         except:
             pass
 
