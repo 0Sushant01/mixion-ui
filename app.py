@@ -3,6 +3,10 @@ import os
 from src.core.app_controller import MixionApp
 from src.core.database import init_database
 from src.screens.splash_screen import play_splash_video
+import customtkinter as ctk
+
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("blue")
 
 
 def _resolve_video_path():

@@ -1,267 +1,268 @@
 import tkinter as tk
 import threading
+import customtkinter as ctk
+from PIL import Image
 
 import config
 from src.screens.splash_screen import play_splash_video
 
 
-class MenuScreen(tk.Frame):
+class MenuScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="#0b0f14")
+        super().__init__(parent, fg_color="#0b0f14", corner_radius=0)
         self.controller = controller
         self.database = controller.database
         self._drink_buttons = []
         self._status_poll_id = None
         self._status_request_id = None
 
-        header = tk.Frame(self, bg="#0b0f14")
-        header.pack(fill="x", padx=30, pady=(20, 10))
+        # Main Layout
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)  # Content area expands
 
-        title = tk.Label(
-            header,
+        # --- Header ---
+        self.header = ctk.CTkFrame(self, fg_color="#0b0f14", height=80, corner_radius=0)
+        self.header.grid(row=0, column=0, sticky="ew", padx=30, pady=(20, 10))
+        self.header.grid_columnconfigure(1, weight=1)  # Spacer
+
+        # Title Section
+        self.title_frame = ctk.CTkFrame(self.header, fg_color="transparent")
+        self.title_frame.grid(row=0, column=0, sticky="w")
+
+        self.title_label = ctk.CTkLabel(
+            self.title_frame,
             text="MIXION",
-            fg="white",
-            bg="#0b0f14",
-            font=("Arial", 28, "bold"),
+            font=("Roboto", 32, "bold"),
+            text_color="white"
         )
-        title.pack(side="left")
+        self.title_label.pack(side="left")
 
-        subtitle = tk.Label(
-            header,
+        self.subtitle_label = ctk.CTkLabel(
+            self.title_frame,
             text="Select Your Drink",
-            fg="#9aa4b2",
-            bg="#0b0f14",
-            font=("Arial", 14),
+            font=("Roboto", 16),
+            text_color="#9aa4b2"
         )
-        subtitle.pack(side="left", padx=16, pady=(6, 0))
+        self.subtitle_label.pack(side="left", padx=(15, 0), pady=(8, 0))
 
-        splash_button = tk.Button(
-            header,
+        # Right Side Controls
+        self.controls_frame = ctk.CTkFrame(self.header, fg_color="transparent")
+        self.controls_frame.grid(row=0, column=2, sticky="e")
+
+        self.status_indicator = ctk.CTkLabel(
+            self.controls_frame,
+            text="● CONNECTING",
+            font=("Roboto", 14, "bold"),
+            text_color="#f59e0b"
+        )
+        self.status_indicator.pack(side="left", padx=(0, 20))
+
+        self.splash_btn = ctk.CTkButton(
+            self.controls_frame,
             text="SPLASH",
-            fg="white",
-            bg="#334155",
-            font=("Arial", 12, "bold"),
             command=self._on_splash,
-            padx=18,
-            pady=8,
-            relief="flat",
+            fg_color="#334155",
+            hover_color="#475569",
+            text_color="white",
+            font=("Roboto", 12, "bold"),
+            width=100,
+            height=36,
+            corner_radius=8
         )
-        splash_button.pack(side="right", padx=(0, 10))
+        self.splash_btn.pack(side="left", padx=(0, 10))
 
-        exit_button = tk.Button(
-            header,
+        self.exit_btn = ctk.CTkButton(
+            self.controls_frame,
             text="EXIT",
-            fg="white",
-            bg="#b00020",
-            font=("Arial", 12, "bold"),
             command=self._on_exit,
-            padx=18,
-            pady=8,
-            relief="flat",
+            fg_color="#b00020",
+            hover_color="#cf6679",
+            text_color="white",
+            font=("Roboto", 12, "bold"),
+            width=80,
+            height=36,
+            corner_radius=8
         )
-        exit_button.pack(side="right")
+        self.exit_btn.pack(side="left")
 
-        status_frame = tk.Frame(header, bg="#0b0f14")
-        status_frame.pack(side="right", padx=16)
-
-        self.status_dot = tk.Label(
-            status_frame,
-            text="●",
-            fg="#f59e0b",
-            bg="#0b0f14",
-            font=("Arial", 14, "bold"),
+        # --- Content Area ---
+        self.content = ctk.CTkScrollableFrame(
+            self,
+            fg_color="transparent",
+            corner_radius=0
         )
-        self.status_dot.pack(side="left")
+        self.content.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
+        
+        # Grid Configuration for Content
+        self.content.grid_columnconfigure((0, 1, 2), weight=1, uniform="card")
 
-        self.status_text = tk.Label(
-            status_frame,
-            text="CONNECTING",
-            fg="#f59e0b",
-            bg="#0b0f14",
-            font=("Arial", 12, "bold"),
-        )
-        self.status_text.pack(side="left", padx=(6, 0))
-
-        self.content = tk.Frame(self, bg="#0b0f14")
-        self.content.pack(fill="both", expand=True, padx=30, pady=20)
-
-        self.empty_label = tk.Label(
-            self.content,
+        self.empty_label = ctk.CTkLabel(
+            self,
             text="No drinks available",
-            fg="white",
-            bg="#0b0f14",
-            font=("Arial", 20, "bold"),
+            font=("Roboto", 24, "bold"),
+            text_color="#64748b"
         )
 
-        self.grid_frame = tk.Frame(self.content, bg="#0b0f14")
         self.refresh()
-
         self._schedule_status_poll()
         self._schedule_status_request()
 
     def refresh(self):
-        for widget in self.grid_frame.winfo_children():
+        # Clear existing widgets in content
+        for widget in self.content.winfo_children():
             widget.destroy()
 
         self._drink_buttons.clear()
 
         drinks = self.database.get_active_drinks()
-
+        
+        # If no drinks, show empty message
         if not drinks:
-            self.grid_frame.pack_forget()
-            self.empty_label.pack(expand=True)
+            self.content.grid_forget()
+            self.empty_label.place(relx=0.5, rely=0.5, anchor="center")
             return
-
-        self.empty_label.pack_forget()
-        self.grid_frame.pack(fill="both", expand=True)
+        
+        self.empty_label.place_forget()
+        self.content.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
 
         tiles = drinks + [{"id": "custom", "name": "CUSTOM MIX", "price": None}]
 
-        max_columns = 3
-        for col in range(max_columns):
-            self.grid_frame.grid_columnconfigure(col, weight=1, uniform="menu")
-
+        # Create cards
         for idx, drink in enumerate(tiles):
-            row = idx // max_columns
-            col = idx % max_columns
-            self.grid_frame.grid_rowconfigure(row, weight=1)
+            row = idx // 3
+            col = idx % 3
+            self._create_drink_card(drink, row, col)
 
-            card = self._build_card(self.grid_frame, drink)
-            card.grid(row=row, column=col, padx=14, pady=14, sticky="nsew")
-
-    def _build_card(self, parent, drink):
+    def _create_drink_card(self, drink, row, col):
         is_custom = drink["id"] == "custom"
-        card_bg = "#161b22" if not is_custom else "#1e2a3a"
-        accent = "#3b82f6" if not is_custom else "#22c55e"
+        
+        card_color = "#161b22" if not is_custom else "#0f291e" # Darker green hint for custom
+        border_color = "#2b313c" if not is_custom else "#10b981"
+        accent_color = "#3b82f6" if not is_custom else "#10b981"
+        hover_color = "#2563eb" if not is_custom else "#059669"
 
-        card = tk.Frame(
-            parent,
-            bg=card_bg,
-            highlightthickness=1,
-            highlightbackground="#2b313c",
+        card = ctk.CTkFrame(
+            self.content,
+            fg_color=card_color,
+            border_width=1,
+            border_color=border_color,
+            corner_radius=15
         )
+        card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
 
-        image_slot = tk.Frame(card, bg="#0f131a", height=90)
-        image_slot.pack(fill="x", padx=16, pady=(16, 10))
-        image_slot.pack_propagate(False)
-
-        image_text = "IMAGE" if not is_custom else "MIX"
-        tk.Label(
-            image_slot,
-            text=image_text,
-            fg="#4b5563",
-            bg="#0f131a",
-            font=("Arial", 12, "bold"),
-        ).pack(expand=True)
-
-        name = drink["name"]
-        if is_custom:
-            name = "CUSTOM MIX"
-
-        name_label = tk.Label(
+        # Image / Icon Placeholder
+        icon_frame = ctk.CTkFrame(
             card,
-            text=name,
-            fg="white",
-            bg=card_bg,
-            font=("Arial", 16, "bold"),
-            wraplength=220,
-            justify="center",
+            fg_color="#0d1117",
+            height=120,
+            corner_radius=10
         )
-        name_label.pack(fill="x", padx=16)
+        icon_frame.pack(fill="x", padx=15, pady=15)
+        icon_frame.pack_propagate(False)
 
-        price_value = drink.get("price")
-        price_text = ""
-        if price_value is not None and not is_custom:
-            price_text = f"Price: {price_value}"
+        icon_text = "🍸" if not is_custom else "🧪"
+        ctk.CTkLabel(
+            icon_frame,
+            text=icon_text,
+            font=("Segoe UI Emoji", 48), # Use system emoji font if possible, or fallback
+            text_color="#4b5563"
+        ).place(relx=0.5, rely=0.5, anchor="center")
 
-        price_label = tk.Label(
+        # Drink Name
+        display_name = drink["name"] if not is_custom else "Design Your Own"
+        ctk.CTkLabel(
+            card,
+            text=display_name,
+            font=("Roboto", 18, "bold"),
+            text_color="white",
+            wraplength=200
+        ).pack(fill="x", padx=15, pady=(0, 5))
+
+        # Price
+        price_text = " "
+        if not is_custom and drink.get("price"):
+            price_text = f"${drink['price']}"
+        
+        ctk.CTkLabel(
             card,
             text=price_text,
-            fg="#9aa4b2",
-            bg=card_bg,
-            font=("Arial", 12),
-        )
-        price_label.pack(pady=(6, 12))
+            font=("Roboto", 14),
+            text_color="#9aa4b2"
+        ).pack(fill="x", padx=15, pady=(0, 15))
 
-        button = tk.Button(
+        # Select Button
+        btn_text = "SELECT" if not is_custom else "START MIXING"
+        command = (self._on_custom if is_custom else lambda d=drink: self._on_drink(d))
+        
+        btn = ctk.CTkButton(
             card,
-            text="SELECT" if not is_custom else "OPEN",
-            command=(self._on_custom if is_custom else lambda d=drink: self._on_drink(d)),
-            fg="white",
-            bg=accent,
-            activebackground="#2563eb",
-            activeforeground="white",
-            font=("Arial", 12, "bold"),
-            relief="flat",
-            padx=20,
-            pady=8,
+            text=btn_text,
+            command=command,
+            fg_color=accent_color,
+            hover_color=hover_color,
+            text_color="white",
+            font=("Roboto", 14, "bold"),
+            height=40,
+            corner_radius=8
         )
-        button.pack(pady=(0, 16))
-
-        self._drink_buttons.append(button)
-
-        def on_enter(_event):
-            card.configure(highlightbackground=accent)
-
-        def on_leave(_event):
-            card.configure(highlightbackground="#2b313c")
-
-        card.bind("<Enter>", on_enter)
-        card.bind("<Leave>", on_leave)
-        for widget in (image_slot, name_label, price_label, button):
-            widget.bind("<Enter>", on_enter)
-            widget.bind("<Leave>", on_leave)
-
-        return card
+        btn.pack(fill="x", padx=15, pady=(0, 20))
+        
+        self._drink_buttons.append(btn)
 
     def _on_drink(self, drink):
-        """Handle drink selection"""
         if not self._is_device_online():
-            self._show_error("Machine not ready. Please wait for connection.")
+            self._show_error("Machine Offline", "Please wait for the device to connect.")
             return
 
         print(f"Selected drink: {drink['name']} (ID: {drink['id']})")
         
-        # Get pour engine from controller
         if not hasattr(self.controller, 'pour_engine'):
-            self._show_error("System not ready. Please restart the application.")
+            self._show_error("System Error", "Pour engine not initialized.")
             return
         
         self._send_dispense(lambda: self.controller.pour_engine.dispense_drink(drink['id']))
-    
-    def _show_error(self, message):
-        """Display error popup"""
-        popup = tk.Toplevel(self)
-        popup.title("Error")
+
+    def _show_error(self, title, message):
+        # Using a Toplevel specific for CTk if possible, or standard CTk approach
+        # Since we don't have CTkMessagebox, we'll make a custom one
+        popup = ctk.CTkToplevel(self)
+        popup.title(title)
         popup.geometry("400x200")
-        popup.configure(bg="#1a1a2e")
+        popup.transient(self) # Make it modal-like
+        popup.grab_set()
         
-        label = tk.Label(
+        # Center popup on screen (approx)
+        popup.update_idletasks()
+        x = self.winfo_screenwidth() // 2 - 200
+        y = self.winfo_screenheight() // 2 - 100
+        popup.geometry(f"+{x}+{y}")
+        
+        ctk.CTkLabel(
+            popup,
+            text=title,
+            font=("Roboto", 18, "bold"),
+            text_color="#ef4444"
+        ).pack(pady=(20, 10))
+        
+        ctk.CTkLabel(
             popup,
             text=message,
-            fg="white",
-            bg="#1a1a2e",
-            font=("Arial", 14),
+            font=("Roboto", 14),
             wraplength=350
-        )
-        label.pack(expand=True, pady=20)
+        ).pack(pady=10)
         
-        button = tk.Button(
+        ctk.CTkButton(
             popup,
             text="OK",
             command=popup.destroy,
-            bg="#e94560",
-            fg="white",
-            font=("Arial", 12, "bold"),
-            padx=30,
-            pady=10,
-            relief="flat"
-        )
-        button.pack(pady=10)
+            fg_color="#334155",
+            hover_color="#475569",
+            width=100
+        ).pack(pady=20)
 
     def _on_custom(self):
         if not self._is_device_online():
-            self._show_error("Machine not ready. Please wait for connection.")
+            self._show_error("Machine Offline", "Please wait for connection.")
             return
         self.controller.show_screen("custom")
 
@@ -277,18 +278,16 @@ class MenuScreen(tk.Frame):
     def _on_splash(self):
         video_path = getattr(self.controller, "video_path", None)
         if not video_path:
-            self._show_error("Splash video path not configured.")
+            self._show_error("Configuration Error", "Splash video path not found.")
             return
-
         play_splash_video(video_path)
 
     def _send_dispense(self, action):
-        """Run dispense command without blocking UI"""
         def worker():
             success, message, msg_id, payload = action()
             def finish():
                 if success:
-                    print(f"Dispense successful: {message} (msg_id: {msg_id})")
+                    print(f"Dispense successful: {message}")
                     self.controller.show_screen("processing")
                     screen = self.controller.get_screen("processing")
                     if screen:
@@ -302,7 +301,7 @@ class MenuScreen(tk.Frame):
                         if screen:
                             screen.start_failure(message, payload)
                     else:
-                        self._show_error(message)
+                        self._show_error("Dispense Failed", message)
             self.after(0, finish)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -330,32 +329,33 @@ class MenuScreen(tk.Frame):
             status = mqtt_client.get_device_status(config.DEVICE_STATUS_TIMEOUT_SEC)
 
         if status == "online":
-            self.status_dot.config(fg="#22c55e")
-            self.status_text.config(text="ONLINE", fg="#22c55e")
+            self.status_indicator.configure(text="● ONLINE", text_color="#22c55e")
+            state = "normal"
         elif status == "offline":
-            self.status_dot.config(fg="#ef4444")
-            self.status_text.config(text="OFFLINE", fg="#ef4444")
+            self.status_indicator.configure(text="● OFFLINE", text_color="#ef4444")
+            state = "disabled"
         else:
-            self.status_dot.config(fg="#f59e0b")
-            self.status_text.config(text="CONNECTING", fg="#f59e0b")
+            self.status_indicator.configure(text="● CONNECTING", text_color="#f59e0b")
+            state = "disabled"
 
-        state = tk.NORMAL if status == "online" else tk.DISABLED
         for button in self._drink_buttons:
-            button.config(state=state)
+            button.configure(state=state)
 
         self._status_poll_id = self.after(1000, self._update_device_status)
 
     def _send_status_request(self):
         online = self._is_device_online()
         if online:
-            return
-
-        mqtt_client = getattr(self.controller, "mqtt_client", None)
-        if mqtt_client:
-            mqtt_client.publish_status_request(
-                config.STATUS_REQUEST_TOPIC,
-                config.STATUS_REQUEST_PAYLOAD
-            )
+            # Check again later
+            pass 
+        else:
+            mqtt_client = getattr(self.controller, "mqtt_client", None)
+            if mqtt_client:
+                mqtt_client.publish_status_request(
+                    config.STATUS_REQUEST_TOPIC,
+                    config.STATUS_REQUEST_PAYLOAD
+                )
 
         interval_ms = int(config.STATUS_REQUEST_INTERVAL_SEC * 1000)
         self._status_request_id = self.after(interval_ms, self._send_status_request)
+
