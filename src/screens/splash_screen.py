@@ -23,24 +23,25 @@ class SplashScreen(tk.Frame):
         self.player = None
         self.instance = None
 
-        # Video container frame
-        self.video_frame = tk.Frame(self, bg="black")
-        self.video_frame.pack(fill="both", expand=True)
-
-        # Add clickable overlay at the bottom (MPV blocks normal event bindings)
-        self.tap_label = tk.Label(
+        # Create full-screen clickable canvas overlay
+        self.canvas = tk.Canvas(
             self,
-            text="⬆ TAP ANYWHERE TO CONTINUE ⬆",
-            font=("Arial", 16, "bold"),
-            fg="white",
             bg="black",
-            cursor="hand2",
-            pady=20
+            highlightthickness=0,
+            cursor="hand2"
         )
-        self.tap_label.place(relx=0.5, rely=0.95, anchor="s")
+        self.canvas.pack(fill="both", expand=True)
         
-        # Bind click events to label and frame
-        self.tap_label.bind("<Button-1>", self.on_touch)
+        # Add tap instruction text
+        self.tap_text = self.canvas.create_text(
+            400, 450,  # Will be repositioned in start()
+            text="⬆ TAP ANYWHERE TO CONTINUE ⬆",
+            font=("Arial", 18, "bold"),
+            fill="white"
+        )
+        
+        # Bind click events to entire canvas (makes whole screen clickable)
+        self.canvas.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
 
         if MPV_AVAILABLE:
@@ -53,49 +54,77 @@ class SplashScreen(tk.Frame):
             # Get absolute path for video
             video_abs_path = os.path.abspath(self.video_path)
             
-            # Create MPV player instance
+            if not os.path.exists(video_abs_path):
+                print(f"Warning: Video file not found: {video_abs_path}")
+                self._show_error_message()
+                return
+            
+            # Wait for canvas to be displayed before embedding
+            self.canvas.update_idletasks()
+            
+            # Get canvas window ID for embedding
+            canvas_wid = self.canvas.winfo_id()
+            
+            print(f"Initializing MPV with canvas wid: {canvas_wid}")
+            
+            # Create MPV player instance with canvas embedding
             self.player = mpv.MPV(
-                wid=str(self.video_frame.winfo_id()),
+                wid=str(canvas_wid),
                 loop='inf',
                 vo='x11' if platform.system() == 'Linux' else 'gpu',
                 keep_open='yes',
                 input_default_bindings=False,
                 input_vo_keyboard=False,
-                osc=False
+                osc=False,
+                quiet=True
             )
             
-            # Load video
+            # Load and play video
             self.player.play(video_abs_path)
             
-            print(f"MPV initialized: {self.video_path}")
+            print(f"MPV initialized: {video_abs_path}")
+            print("Video should now be playing in background")
+            
         except Exception as e:
             print(f"Error initializing MPV: {e}")
+            import traceback
+            traceback.print_exc()
             self._show_error_message()
 
     def _show_error_message(self):
-        label = tk.Label(
-            self.video_frame,
+        # Clear canvas and show error message
+        self.canvas.delete("all")
+        self.canvas.create_text(
+            400, 300,  # Will be repositioned in start()
             text="Video playback unavailable\n\nInstall MPV and python-mpv\n\nTap to continue",
-            fg="white",
-            bg="black",
             font=("Arial", 16),
+            fill="white",
+            justify="center"
         )
-        label.pack(expand=True)
 
     def start(self):
+        """Called when screen is shown"""
+        # Update canvas and reposition text to center
+        self.canvas.update()
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+        
+        print(f"Canvas size: {width}x{height}")
+        
+        # Reposition tap text to bottom center
+        if hasattr(self, 'tap_text'):
+            self.canvas.coords(self.tap_text, width // 2, height - 50)
+        
         if not self.player:
             return
-
-        self.video_frame.update()
         
         try:
-            # MPV starts playback automatically when initialized
-            # Just ensure it's playing
+            # MPV should already be playing, just ensure it's not paused
             if hasattr(self.player, 'pause'):
                 self.player.pause = False
-            print("Video playback started")
+            print("Video playback started/resumed")
             
-            # Animate the tap label to make it noticeable
+            # Start text animation
             self._animate_tap_label()
         except Exception as e:
             print(f"Error starting playback: {e}")
@@ -103,11 +132,11 @@ class SplashScreen(tk.Frame):
     def _animate_tap_label(self):
         """Pulse animation for tap label"""
         try:
-            current_color = self.tap_label.cget("fg")
-            if current_color == "white":
-                self.tap_label.config(fg="#CCCCCC")
-            else:
-                self.tap_label.config(fg="white")
+            # Toggle between white and gray
+            current_color = self.canvas.itemcget(self.tap_text, "fill")
+            new_color = "#CCCCCC" if current_color == "white" else "white"
+            self.canvas.itemconfig(self.tap_text, fill=new_color)
+            
             # Repeat animation every 500ms
             self.after(500, self._animate_tap_label)
         except:
