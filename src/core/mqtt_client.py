@@ -65,6 +65,7 @@ class MQTTClient:
         """Handle incoming MQTT messages"""
         if self.status_topic and msg.topic == self.status_topic:
             payload = msg.payload.decode("utf-8", errors="ignore").strip()
+            print(f"Status response received on {msg.topic}: {payload}")
             self.last_status_payload = payload
             self._update_last_alive(payload)
 
@@ -105,9 +106,11 @@ class MQTTClient:
             return False
 
         try:
+            payload_json = json.dumps(payload)
             with self.lock:
-                result = self.client.publish(topic, json.dumps(payload), qos=1)
+                result = self.client.publish(topic, payload_json, qos=1)
                 result.wait_for_publish()
+            print(f"Status request sent on {topic}: {payload_json}")
             return True
         except Exception as e:
             print(f"Failed to publish status request: {e}")
