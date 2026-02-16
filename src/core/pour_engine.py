@@ -49,15 +49,15 @@ class PourEngine:
                 })
             
             # Send MQTT command
-            success, msg_id = self.mqtt.publish_dispense_command(jobs)
+            success, msg_id, payload = self.mqtt.publish_dispense_command(jobs)
             
             if success:
-                return True, "Dispense command sent successfully", msg_id
+                return True, "Dispense command sent successfully", msg_id, payload
             else:
-                return False, "Failed to send MQTT command", None
+                return False, "Failed to send MQTT command", None, payload
                 
         except Exception as e:
-            return False, f"Error dispensing drink: {str(e)}", None
+            return False, f"Error dispensing drink: {str(e)}", None, None
     
     def dispense_custom(self, bottle_amounts):
         """
@@ -109,15 +109,15 @@ class PourEngine:
                 return False, "No valid bottles selected", None
             
             # Send MQTT command
-            success, msg_id = self.mqtt.publish_dispense_command(jobs)
+            success, msg_id, payload = self.mqtt.publish_dispense_command(jobs)
             
             if success:
-                return True, "Custom dispense command sent successfully", msg_id
+                return True, "Custom dispense command sent successfully", msg_id, payload
             else:
-                return False, "Failed to send MQTT command", None
+                return False, "Failed to send MQTT command", None, payload
                 
         except Exception as e:
-            return False, f"Error dispensing custom mix: {str(e)}", None
+            return False, f"Error dispensing custom mix: {str(e)}", None, None
     
     def _calculate_duration(self, amount_ml, flow_rate):
         """
@@ -125,7 +125,7 @@ class PourEngine:
         
         Args:
             amount_ml: Amount to dispense in milliliters
-            flow_rate: Flow rate in ml per minute
+            flow_rate: Flow rate in ml per second
         
         Returns:
             float: Duration in seconds (rounded to 2 decimal places)
@@ -133,5 +133,5 @@ class PourEngine:
         if flow_rate <= 0:
             raise ValueError("Flow rate must be greater than 0")
         
-        duration = (amount_ml * 60.0) / flow_rate
+        duration = amount_ml / flow_rate
         return round(duration, 2)

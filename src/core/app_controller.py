@@ -56,6 +56,9 @@ class MixionApp(tk.Tk):
             screen.refresh()
         screen.tkraise()
 
+    def get_screen(self, name):
+        return self._screens.get(name)
+
     def quit(self):
         """Clean shutdown"""
         print("Shutting down...")

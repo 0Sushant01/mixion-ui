@@ -23,6 +23,7 @@ class MQTTClient:
         self.lock = Lock()
         self.last_alive_at = 0.0
         self.last_status_payload = None
+        self.status_listeners = []
         
     def connect(self):
         """Connect to MQTT broker"""
@@ -67,7 +68,17 @@ class MQTTClient:
             payload = msg.payload.decode("utf-8", errors="ignore").strip()
             print(f"Status response received on {msg.topic}: {payload}")
             self.last_status_payload = payload
-            self._update_last_alive(payload)
+            data = None
+            try:
+                data = json.loads(payload)
+            except Exception:
+                data = None
+
+            if data is not None:
+                self._update_last_alive_from_data(data)
+                self._notify_status_listeners(data)
+            else:
+                self._update_last_alive(payload)
 
     def _update_last_alive(self, payload):
         """Update last alive timestamp if payload indicates device is alive"""
@@ -77,13 +88,31 @@ class MQTTClient:
                 if lower == "alive" or lower == "online":
                     self.last_alive_at = time.time()
                     return
+        except Exception:
+            pass
 
-            data = json.loads(payload)
+    def _update_last_alive_from_data(self, data):
+        try:
             status = str(data.get("status", "")).lower()
             if status in ("alive", "online"):
                 self.last_alive_at = time.time()
         except Exception:
             pass
+
+    def _notify_status_listeners(self, data):
+        for listener in list(self.status_listeners):
+            try:
+                listener(data)
+            except Exception:
+                pass
+
+    def add_status_listener(self, listener):
+        if listener not in self.status_listeners:
+            self.status_listeners.append(listener)
+
+    def remove_status_listener(self, listener):
+        if listener in self.status_listeners:
+            self.status_listeners.remove(listener)
     
     def publish_dispense_command(self, jobs):
         """
@@ -94,11 +123,34 @@ class MQTTClient:
                   Example: [{"relay": 1, "duration_sec": 5}, {"relay": 2, "duration_sec": 7}]
         
         Returns:
-            tuple: (success: bool, msg_id: str or None)
+            tuple: (success: bool, msg_id: str or None, payload: dict or None)
         """
+        msg_id = str(uuid.uuid4())
+        
+        payload = {
+            "cmd": "dispense_parallel",
+            "device_id": self.device_id,
+            "jobs": jobs,
+            "msg_id": msg_id
+        }
+
         if not self.connected:
             print("Not connected to MQTT broker")
-            return False, None
+            return False, msg_id, payload
+        
+        topic = f"mixion/command/{self.device_id}"
+        
+        try:
+            with self.lock:
+                result = self.client.publish(topic, json.dumps(payload), qos=1)
+                result.wait_for_publish()
+            
+            print(f"Published dispense command: {payload}")
+            return True, msg_id, payload
+            
+        except Exception as e:
+            print(f"Failed to publish MQTT message: {e}")
+            return False, None, payload
 
     def publish_status_request(self, topic, payload):
         """Publish a status request to ESP32"""
@@ -115,29 +167,6 @@ class MQTTClient:
         except Exception as e:
             print(f"Failed to publish status request: {e}")
             return False
-        
-        msg_id = str(uuid.uuid4())
-        
-        payload = {
-            "cmd": "dispense_parallel",
-            "device_id": self.device_id,
-            "jobs": jobs,
-            "msg_id": msg_id
-        }
-        
-        topic = f"mixion/command/{self.device_id}"
-        
-        try:
-            with self.lock:
-                result = self.client.publish(topic, json.dumps(payload), qos=1)
-                result.wait_for_publish()
-            
-            print(f"Published dispense command: {payload}")
-            return True, msg_id
-            
-        except Exception as e:
-            print(f"Failed to publish MQTT message: {e}")
-            return False, None
     
     def disconnect(self):
         """Disconnect from MQTT broker"""

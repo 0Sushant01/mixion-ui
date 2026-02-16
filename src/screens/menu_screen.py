@@ -263,14 +263,24 @@ class MenuScreen(tk.Frame):
     def _send_dispense(self, action):
         """Run dispense command without blocking UI"""
         def worker():
-            success, message, msg_id = action()
+            success, message, msg_id, payload = action()
             def finish():
                 if success:
                     print(f"Dispense successful: {message} (msg_id: {msg_id})")
                     self.controller.show_screen("processing")
+                    screen = self.controller.get_screen("processing")
+                    if screen:
+                        relays = [job["relay"] for job in payload.get("jobs", [])]
+                        screen.start_transaction(payload, msg_id, relays)
                 else:
                     print(f"Dispense failed: {message}")
-                    self._show_error(message)
+                    if payload:
+                        self.controller.show_screen("processing")
+                        screen = self.controller.get_screen("processing")
+                        if screen:
+                            screen.start_failure(message, payload)
+                    else:
+                        self._show_error(message)
             self.after(0, finish)
 
         threading.Thread(target=worker, daemon=True).start()

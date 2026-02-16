@@ -18,6 +18,9 @@ STATUS_REQUEST_TOPIC = f"mixion/status/{DEVICE_ID}/get"
 STATUS_REQUEST_INTERVAL_SEC = 2
 STATUS_REQUEST_PAYLOAD = {"cmd": "status"}
 
+# Dispense workflow
+DISPENSE_TIMEOUT_SEC = 30
+
 # Database Configuration
 DATABASE_PATH = "database/mixion.db"
 

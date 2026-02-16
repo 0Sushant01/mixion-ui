@@ -1,4 +1,5 @@
 import tkinter as tk
+import threading
 
 from src.core.database import init_database
 
@@ -207,16 +208,34 @@ class CustomMixScreen(tk.Frame):
             self._show_error("System not ready. Please restart the application.")
             return
         
-        # Dispense custom mix
-        success, message, msg_id = self.controller.pour_engine.dispense_custom(payload)
-        
-        if success:
-            print(f"Custom dispense successful: {message} (msg_id: {msg_id})")
-            # Navigate to processing screen
-            self.controller.show_screen("processing")
-        else:
-            print(f"Custom dispense failed: {message}")
-            self._show_error(message)
+        self._send_dispense(lambda: self.controller.pour_engine.dispense_custom(payload))
+
+    def _send_dispense(self, action):
+        """Run dispense command without blocking UI"""
+        def worker():
+            success, message, msg_id, payload = action()
+
+            def finish():
+                if success:
+                    print(f"Custom dispense successful: {message} (msg_id: {msg_id})")
+                    self.controller.show_screen("processing")
+                    screen = self.controller.get_screen("processing")
+                    if screen:
+                        relays = [job["relay"] for job in payload.get("jobs", [])]
+                        screen.start_transaction(payload, msg_id, relays)
+                else:
+                    print(f"Custom dispense failed: {message}")
+                    if payload:
+                        self.controller.show_screen("processing")
+                        screen = self.controller.get_screen("processing")
+                        if screen:
+                            screen.start_failure(message, payload)
+                    else:
+                        self._show_error(message)
+
+            self.after(0, finish)
+
+        threading.Thread(target=worker, daemon=True).start()
     
     def _show_error(self, message):
         """Display error popup"""

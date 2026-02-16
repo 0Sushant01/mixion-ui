@@ -172,7 +172,7 @@ class BottleDialog(tk.Toplevel):
             row=2, column=1, sticky="w", pady=10
         )
 
-        tk.Label(frame, text="Flow Rate (ml/min):", bg="white", font=("Arial", 11)).grid(
+        tk.Label(frame, text="Flow Rate (ml/sec):", bg="white", font=("Arial", 11)).grid(
             row=3, column=0, sticky="w", pady=10
         )
         self.flow_rate_entry = tk.Entry(frame, font=("Arial", 11), width=25)
