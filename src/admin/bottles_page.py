@@ -22,7 +22,7 @@ class BottlesPage(tk.Frame):
         ).pack(anchor="w", pady=(0, 10))
 
         # Table
-        columns = ("ID", "Position", "Name", "Enabled")
+        columns = ("ID", "Position", "Name", "Flow Rate", "Enabled")
         self.tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=10)
 
         for col in columns:
@@ -86,10 +86,11 @@ class BottlesPage(tk.Frame):
         bottles = self.database.get_all_bottles()
         for bottle in bottles:
             enabled = "Yes" if bottle["enabled"] else "No"
+            flow_rate = bottle.get("flow_rate", 0)
             self.tree.insert(
                 "",
                 "end",
-                values=(bottle["id"], bottle["position"], bottle["name"], enabled),
+                values=(bottle["id"], bottle["position"], bottle["name"], flow_rate, enabled),
             )
 
     def _add_bottle(self):
@@ -140,7 +141,7 @@ class BottleDialog(tk.Toplevel):
         self.bottle = bottle
 
         self.title("Add Bottle" if mode == "add" else "Edit Bottle")
-        self.geometry("400x250")
+        self.geometry("420x300")
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
@@ -171,13 +172,20 @@ class BottleDialog(tk.Toplevel):
             row=2, column=1, sticky="w", pady=10
         )
 
+        tk.Label(frame, text="Flow Rate (ml/min):", bg="white", font=("Arial", 11)).grid(
+            row=3, column=0, sticky="w", pady=10
+        )
+        self.flow_rate_entry = tk.Entry(frame, font=("Arial", 11), width=25)
+        self.flow_rate_entry.grid(row=3, column=1, pady=10)
+
         if self.mode == "edit" and self.bottle:
             self.name_entry.insert(0, self.bottle["name"])
             self.position_entry.insert(0, str(self.bottle["position"]))
             self.enabled_var.set(bool(self.bottle["enabled"]))
+            self.flow_rate_entry.insert(0, str(self.bottle.get("flow_rate", 0)))
 
         btn_frame = tk.Frame(frame, bg="white")
-        btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
+        btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
 
         tk.Button(
             btn_frame,
@@ -204,6 +212,7 @@ class BottleDialog(tk.Toplevel):
     def _save(self):
         name = self.name_entry.get().strip()
         position_str = self.position_entry.get().strip()
+        flow_rate_str = self.flow_rate_entry.get().strip()
 
         if not name:
             messagebox.showerror("Error", "Name is required")
@@ -217,14 +226,22 @@ class BottleDialog(tk.Toplevel):
             messagebox.showerror("Error", "Position must be a positive integer")
             return
 
+        try:
+            flow_rate = float(flow_rate_str)
+            if flow_rate <= 0:
+                raise ValueError("Flow rate must be > 0")
+        except ValueError:
+            messagebox.showerror("Error", "Flow rate must be a positive number")
+            return
+
         enabled = 1 if self.enabled_var.get() else 0
 
         try:
             if self.mode == "add":
-                self.database.add_bottle(name, position)
+                self.database.add_bottle(name, position, flow_rate)
                 messagebox.showinfo("Success", "Bottle added")
             else:
-                self.database.update_bottle(self.bottle["id"], name, position, enabled)
+                self.database.update_bottle(self.bottle["id"], name, position, flow_rate, enabled)
                 messagebox.showinfo("Success", "Bottle updated")
             self.destroy()
         except Exception as e:

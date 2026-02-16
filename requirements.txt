@@ -4,9 +4,8 @@
 # MQTT Client - Communication with ESP32 hardware
 paho-mqtt>=1.6.1
 
-# Python MPV - Video playback for splash screen
-# IMPORTANT: Install system MPV first!
-#   Raspberry Pi/Ubuntu: sudo apt-get install mpv libmpv-dev
+# MPV command-line tool is required for splash video playback.
+# This is a system dependency, not a Python package.
+#   Raspberry Pi/Ubuntu: sudo apt-get install mpv
 #   macOS: brew install mpv
 #   Windows: Download from https://mpv.io/installation/
-python-mpv>=1.0.1
