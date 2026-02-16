@@ -83,7 +83,7 @@ def play_splash_video(video_path):
     """
     Play splash video in fullscreen using MPV with runtime touch-to-exit.
     This runs BEFORE the tkinter app starts.
-    
+
     Uses runtime MPV configuration (no system files modified):
     - Touch/click anywhere exits the video
     - Behavior applies ONLY to splash playback
@@ -103,12 +103,22 @@ def play_splash_video(video_path):
     
     print(f"Playing splash video: {video_abs_path}")
     print("Touch anywhere to continue...")
-    
+
+    temp_input_conf = None
     try:
+        # Create a temporary input.conf that only applies to this MPV run.
+        # Use a temp file instead of --input-cmdlist (which prints command list and exits).
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".conf") as temp_file:
+            temp_file.write("MOUSE_BTN0 quit\n")
+            temp_file.write("MOUSE_BTN0_DBL quit\n")
+            temp_file.write("TOUCH quit\n")
+            temp_input_conf = temp_file.name
+
         # Run MPV with runtime input configuration
         # --input-default-bindings=no: Disable all default bindings
-        # --input-conf=/dev/null: Ignore any persistent config files
-        # --input-cmdlist: Define touch-to-quit for this session ONLY
+        # --input-conf=<temp>: Use only our temp file
         subprocess.run([
             "mpv",
             "--fullscreen",
@@ -116,10 +126,15 @@ def play_splash_video(video_path):
             "--no-osd-bar",
             "--quiet",
             "--input-default-bindings=no",
-            "--input-conf=/dev/null",
-            "--input-cmdlist=MOUSE_BTN0 quit",
+            f"--input-conf={temp_input_conf}",
             video_abs_path
         ])
         print("Video playback finished")
     except Exception as e:
         print(f"Error playing video: {e}")
+    finally:
+        if temp_input_conf and os.path.exists(temp_input_conf):
+            try:
+                os.remove(temp_input_conf)
+            except OSError:
+                pass
