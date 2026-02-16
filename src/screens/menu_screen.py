@@ -1,13 +1,16 @@
 import tkinter as tk
+import threading
 
-from src.core.database import init_database
+import config
 
 
 class MenuScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#0b0f14")
         self.controller = controller
-        self.database = init_database()
+        self.database = controller.database
+        self._drink_buttons = []
+        self._status_poll_id = None
 
         header = tk.Frame(self, bg="#0b0f14")
         header.pack(fill="x", padx=30, pady=(20, 10))
@@ -43,6 +46,27 @@ class MenuScreen(tk.Frame):
         )
         exit_button.pack(side="right")
 
+        status_frame = tk.Frame(header, bg="#0b0f14")
+        status_frame.pack(side="right", padx=16)
+
+        self.status_dot = tk.Label(
+            status_frame,
+            text="●",
+            fg="#ef4444",
+            bg="#0b0f14",
+            font=("Arial", 14, "bold"),
+        )
+        self.status_dot.pack(side="left")
+
+        self.status_text = tk.Label(
+            status_frame,
+            text="OFFLINE",
+            fg="#ef4444",
+            bg="#0b0f14",
+            font=("Arial", 12, "bold"),
+        )
+        self.status_text.pack(side="left", padx=(6, 0))
+
         self.content = tk.Frame(self, bg="#0b0f14")
         self.content.pack(fill="both", expand=True, padx=30, pady=20)
 
@@ -57,9 +81,13 @@ class MenuScreen(tk.Frame):
         self.grid_frame = tk.Frame(self.content, bg="#0b0f14")
         self.refresh()
 
+        self._schedule_status_poll()
+
     def refresh(self):
         for widget in self.grid_frame.winfo_children():
             widget.destroy()
+
+        self._drink_buttons.clear()
 
         drinks = self.database.get_active_drinks()
 
@@ -154,6 +182,8 @@ class MenuScreen(tk.Frame):
         )
         button.pack(pady=(0, 16))
 
+        self._drink_buttons.append(button)
+
         def on_enter(_event):
             card.configure(highlightbackground=accent)
 
@@ -170,6 +200,10 @@ class MenuScreen(tk.Frame):
 
     def _on_drink(self, drink):
         """Handle drink selection"""
+        if not self._is_device_online():
+            self._show_error("Machine not ready. Please wait for connection.")
+            return
+
         print(f"Selected drink: {drink['name']} (ID: {drink['id']})")
         
         # Get pour engine from controller
@@ -177,16 +211,7 @@ class MenuScreen(tk.Frame):
             self._show_error("System not ready. Please restart the application.")
             return
         
-        # Dispense the drink
-        success, message, msg_id = self.controller.pour_engine.dispense_drink(drink['id'])
-        
-        if success:
-            print(f"Dispense successful: {message} (msg_id: {msg_id})")
-            # Navigate to processing screen
-            self.controller.show_screen("processing")
-        else:
-            print(f"Dispense failed: {message}")
-            self._show_error(message)
+        self._send_dispense(lambda: self.controller.pour_engine.dispense_drink(drink['id']))
     
     def _show_error(self, message):
         """Display error popup"""
@@ -219,7 +244,51 @@ class MenuScreen(tk.Frame):
         button.pack(pady=10)
 
     def _on_custom(self):
+        if not self._is_device_online():
+            self._show_error("Machine not ready. Please wait for connection.")
+            return
         self.controller.show_screen("custom")
 
     def _on_exit(self):
         self.controller.quit()
+
+    def _send_dispense(self, action):
+        """Run dispense command without blocking UI"""
+        def worker():
+            success, message, msg_id = action()
+            def finish():
+                if success:
+                    print(f"Dispense successful: {message} (msg_id: {msg_id})")
+                    self.controller.show_screen("processing")
+                else:
+                    print(f"Dispense failed: {message}")
+                    self._show_error(message)
+            self.after(0, finish)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _schedule_status_poll(self):
+        if self._status_poll_id:
+            self.after_cancel(self._status_poll_id)
+        self._update_device_status()
+
+    def _is_device_online(self):
+        mqtt_client = getattr(self.controller, "mqtt_client", None)
+        if not mqtt_client:
+            return False
+        return mqtt_client.is_device_online(config.DEVICE_STATUS_TIMEOUT_SEC)
+
+    def _update_device_status(self):
+        online = self._is_device_online()
+        if online:
+            self.status_dot.config(fg="#22c55e")
+            self.status_text.config(text="ONLINE", fg="#22c55e")
+        else:
+            self.status_dot.config(fg="#ef4444")
+            self.status_text.config(text="OFFLINE", fg="#ef4444")
+
+        state = tk.NORMAL if online else tk.DISABLED
+        for button in self._drink_buttons:
+            button.config(state=state)
+
+        self._status_poll_id = self.after(1000, self._update_device_status)

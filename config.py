@@ -12,6 +12,9 @@ DEVICE_ID = "esp32_1"
 TOPIC_COMMAND = f"mixion/command/{DEVICE_ID}"
 TOPIC_STATUS = f"mixion/status/{DEVICE_ID}"
 
+# Device status
+DEVICE_STATUS_TIMEOUT_SEC = 6
+
 # Database Configuration
 DATABASE_PATH = "database/mixion.db"
 

@@ -44,7 +44,7 @@ class PourEngine:
                 )
                 
                 jobs.append({
-                    "relay": recipe['position'],
+                    "relay": recipe['bottle_id'],
                     "duration_sec": duration_sec
                 })
             
@@ -101,7 +101,7 @@ class PourEngine:
                 )
                 
                 jobs.append({
-                    "relay": bottle['position'],
+                    "relay": bottle['id'],
                     "duration_sec": duration_sec
                 })
             
@@ -125,7 +125,7 @@ class PourEngine:
         
         Args:
             amount_ml: Amount to dispense in milliliters
-            flow_rate: Flow rate in ml per second
+            flow_rate: Flow rate in ml per minute
         
         Returns:
             float: Duration in seconds (rounded to 2 decimal places)
@@ -133,5 +133,5 @@ class PourEngine:
         if flow_rate <= 0:
             raise ValueError("Flow rate must be greater than 0")
         
-        duration = amount_ml / flow_rate
+        duration = (amount_ml * 60.0) / flow_rate
         return round(duration, 2)

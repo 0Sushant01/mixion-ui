@@ -21,7 +21,8 @@ class MixionApp(tk.Tk):
         self.mqtt_client = MQTTClient(
             broker=config.MQTT_BROKER,
             port=config.MQTT_PORT,
-            device_id=config.DEVICE_ID
+            device_id=config.DEVICE_ID,
+            status_topic=config.TOPIC_STATUS
         )
         self.pour_engine = PourEngine(self.database, self.mqtt_client)
         
