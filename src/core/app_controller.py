@@ -16,6 +16,8 @@ class MixionApp(tk.Tk):
         self.configure(bg="black")
         self.attributes("-fullscreen", True)
 
+        self.video_path = video_path
+
         # Initialize core components
         self.database = init_database()
         self.mqtt_client = MQTTClient(

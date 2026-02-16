@@ -2,6 +2,7 @@ import tkinter as tk
 import threading
 
 import config
+from src.screens.splash_screen import play_splash_video
 
 
 class MenuScreen(tk.Frame):
@@ -33,6 +34,19 @@ class MenuScreen(tk.Frame):
             font=("Arial", 14),
         )
         subtitle.pack(side="left", padx=16, pady=(6, 0))
+
+        splash_button = tk.Button(
+            header,
+            text="SPLASH",
+            fg="white",
+            bg="#334155",
+            font=("Arial", 12, "bold"),
+            command=self._on_splash,
+            padx=18,
+            pady=8,
+            relief="flat",
+        )
+        splash_button.pack(side="right", padx=(0, 10))
 
         exit_button = tk.Button(
             header,
@@ -259,6 +273,14 @@ class MenuScreen(tk.Frame):
             self.after_cancel(self._status_request_id)
             self._status_request_id = None
         self.controller.quit()
+
+    def _on_splash(self):
+        video_path = getattr(self.controller, "video_path", None)
+        if not video_path:
+            self._show_error("Splash video path not configured.")
+            return
+
+        play_splash_video(video_path)
 
     def _send_dispense(self, action):
         """Run dispense command without blocking UI"""

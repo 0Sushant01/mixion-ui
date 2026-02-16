@@ -88,6 +88,19 @@ class ProcessingScreen(tk.Frame):
             relief="flat",
             cursor="hand2"
         )
+
+        self.menu_button = tk.Button(
+            self,
+            text="MENU",
+            command=self._on_menu,
+            bg="#334155",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=24,
+            pady=10,
+            relief="flat"
+        )
+        self.menu_button.pack(side="bottom", pady=(0, 20))
         
         # Animation state
         self.animation_running = False
@@ -159,6 +172,10 @@ class ProcessingScreen(tk.Frame):
     
     def _on_return(self):
         """Return to menu"""
+        self.controller.show_screen("menu")
+
+    def _on_menu(self):
+        self.reset()
         self.controller.show_screen("menu")
     
     def refresh(self):
