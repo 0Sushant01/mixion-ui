@@ -2,6 +2,7 @@ import os
 
 from src.core.app_controller import MixionApp
 from src.core.database import init_database
+from src.screens.splash_screen import play_splash_video
 
 
 def _resolve_video_path():
@@ -11,5 +12,12 @@ def _resolve_video_path():
 
 if __name__ == "__main__":
     init_database()
-    app = MixionApp(video_path=_resolve_video_path())
+    
+    # Play splash video BEFORE starting app
+    # Video plays fullscreen, exits on click
+    video_path = _resolve_video_path()
+    play_splash_video(video_path)
+    
+    # After video exits, start the main app
+    app = MixionApp(video_path=video_path)
     app.run()

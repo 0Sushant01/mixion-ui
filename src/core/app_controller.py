@@ -7,7 +7,6 @@ from src.core.pour_engine import PourEngine
 from src.screens.custom_screen import CustomMixScreen
 from src.screens.menu_screen import MenuScreen
 from src.screens.processing_screen import ProcessingScreen
-from src.screens.splash_screen import SplashScreen
 
 
 class MixionApp(tk.Tk):
@@ -36,7 +35,6 @@ class MixionApp(tk.Tk):
         self._container.pack(fill="both", expand=True)
 
         self._screens = {
-            "splash": SplashScreen(self._container, self, video_path=video_path),
             "menu": MenuScreen(self._container, self),
             "custom": CustomMixScreen(self._container, self),
             "processing": ProcessingScreen(self._container, self),
@@ -45,16 +43,13 @@ class MixionApp(tk.Tk):
         for screen in self._screens.values():
             screen.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.show_screen("splash")
+        # Start directly at menu (splash video was already played)
+        self.show_screen("menu")
         
         # Handle window close
         self.protocol("WM_DELETE_WINDOW", self.quit)
 
     def show_screen(self, name):
-        if name == "menu":
-            self._screens["splash"].stop()
-        if name == "splash":
-            self._screens["splash"].start()
         screen = self._screens[name]
         if hasattr(screen, "refresh"):
             screen.refresh()
