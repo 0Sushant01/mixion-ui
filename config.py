@@ -14,7 +14,7 @@ TOPIC_STATUS = f"mixion/status/{DEVICE_ID}"
 
 # Device status
 DEVICE_STATUS_TIMEOUT_SEC = 6
-STATUS_REQUEST_TOPIC = f"mixion/status/{DEVICE_ID}/get"
+STATUS_REQUEST_TOPIC = f"mixion/status/{DEVICE_ID}/get"#
 STATUS_REQUEST_INTERVAL_SEC = 2
 STATUS_REQUEST_PAYLOAD = {"cmd": "status"}
 
