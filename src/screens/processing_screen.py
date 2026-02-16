@@ -43,19 +43,31 @@ class ProcessingScreen(ctk.CTkFrame):
         )
         self.status_label.pack(pady=(20, 0))
 
-        # Log area (hidden / subtle)
+        # Log area (Visible Debug Console)
+        self.log_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.log_frame.pack(side="bottom", fill="both", expand=True, padx=40, pady=(0, 20))
+        
+        ctk.CTkLabel(
+            self.log_frame, 
+            text="COMMUNICATION LOG", 
+            font=("Roboto", 12, "bold"), 
+            text_color="#94A3B8",
+            anchor="w"
+        ).pack(fill="x", pady=(10, 5))
+
         self.log_text = ctk.CTkTextbox(
-            self,
-            height=100,
-            fg_color="#F1F5F9",
-            text_color="#334155",
-            font=("Consolas", 12),
-            corner_radius=10
+            self.log_frame,
+            height=150,
+            fg_color="#1E293B",      # Dark terminal background
+            text_color="#38BDF8",    # Light Blue text for generic info
+            font=("Consolas", 14),
+            corner_radius=12,
+            border_width=0
         )
-        self.log_text.pack(side="bottom", fill="x", padx=60, pady=20)
+        self.log_text.pack(fill="both", expand=True)
         self.log_text.configure(state="disabled")
 
-        # Return Button
+        # Return Button (Initially Hidden)
         self.return_button = ctk.CTkButton(
             self.content,
             text="RETURN TO MENU",
@@ -113,7 +125,7 @@ class ProcessingScreen(ctk.CTkFrame):
         self.dots_label.configure(text="")
         self.status_label.configure(text="")
         self.return_button.pack_forget()
-        self.return_button.configure(fg_color="#2563EB", hover_color="#1D4ED8") # Reset color
+        self.return_button.configure(fg_color="#2563EB", hover_color="#1D4ED8") 
         self.dot_count = 0
         self.current_msg_id = None
         self.expected_relays.clear()
@@ -130,22 +142,29 @@ class ProcessingScreen(ctk.CTkFrame):
         self.reset()
         self.start_animation()
 
-    # --- Communication Logic (same as before) ---
+    # --- Communication Logic ---
     def start_transaction(self, payload, msg_id, relays):
         self.reset()
         self.start_animation()
         self.current_msg_id = msg_id
         self.expected_relays = set(relays)
         self.completed_relays = set()
-        self._append_log(f"SENT: {json.dumps(payload)}")
+        
+        self._log_event("TX", "DISPENSE_COMMAND", json.dumps(payload, indent=2))
         self._attach_listener()
         self._start_timeout()
 
     def start_failure(self, message, payload=None):
         self.reset()
-        if payload: self._append_log(f"SENT: {json.dumps(payload)}")
-        self._append_log(f"ERROR: {message}")
+        if payload: self._log_event("TX", "DISPENSE_COMMAND", json.dumps(payload, indent=2))
+        self._log_event("ERR", "DISPENSE_FAILED", message)
         self.show_error(message)
+
+    def _log_event(self, direction, event_type, content):
+        timestamp = time.strftime("%H:%M:%S")
+        prefix = f"[{timestamp}] {direction} | {event_type}"
+        full_msg = f"{prefix}\n{content}\n" + "-"*40
+        self._append_log(full_msg)
 
     def _append_log(self, text):
         self.log_text.configure(state="normal")
@@ -172,6 +191,9 @@ class ProcessingScreen(ctk.CTkFrame):
 
     def _handle_status(self, data):
         if self._is_finished: return
+        # Log RAW received data first
+        self._log_event("RX", "MQTT_MESSAGE", json.dumps(data, indent=None)) 
+        
         msg_id, status = str(data.get("msg_id", "")), str(data.get("status", "")).lower()
         if msg_id != self.current_msg_id: return
         
