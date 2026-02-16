@@ -1,91 +1,83 @@
-import tkinter as tk
+import customtkinter as ctk
 import threading
-
 from src.core.database import init_database
 
-
-class CustomMixScreen(tk.Frame):
+class CustomMixScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="#FFFFFF")
+        super().__init__(parent, fg_color="white", corner_radius=0)
         self.controller = controller
         self.database = init_database()
         self.rows = []
 
+        # Constants
+        self.COLOR_SUCCESS = "#059669"
+        self.COLOR_TEXT = "#111827"
+        self.TITLE_FONT = ("Roboto", 32, "bold")
+        self.BTN_FONT = ("Roboto", 16, "bold")
+
+        # Layout
         self._build_header()
         self._build_body()
         self._build_footer()
-
+        
         self.refresh()
 
     def _build_header(self):
-        header = tk.Frame(self, bg="#FFFFFF")
+        header = ctk.CTkFrame(self, fg_color="white", height=80, corner_radius=0)
         header.pack(fill="x", padx=30, pady=(20, 10))
+        
+        ctk.CTkLabel(
+            header, 
+            text="Design Your Mix", 
+            font=self.TITLE_FONT, 
+            text_color=self.COLOR_TEXT
+        ).pack(side="left")
 
-        title = tk.Label(
-            header,
-            text="CUSTOM MIX",
-            fg="black",
-            bg="#FFFFFF",
-            font=("Arial", 26, "bold"),
-        )
-        title.pack(side="left")
-
-        back_btn = tk.Button(
+        ctk.CTkButton(
             header,
             text="BACK",
             command=self._on_back,
-            bg="#2b313c",
-            fg="white",
-            font=("Arial", 12, "bold"),
-            padx=18,
-            pady=8,
-            relief="flat",
-        )
-        back_btn.pack(side="right")
+            fg_color="#F1F5F9",
+            hover_color="#E2E8F0",
+            text_color="#64748B",
+            font=self.BTN_FONT,
+            width=100,
+            height=44,
+            corner_radius=22
+        ).pack(side="right")
 
     def _build_body(self):
-        self.body = tk.Frame(self, bg="#FFFFFF")
-        self.body.pack(fill="both", expand=True, padx=30, pady=(10, 10))
+        self.body = ctk.CTkFrame(self, fg_color="transparent")
+        self.body.pack(fill="both", expand=True, padx=30, pady=10)
 
-        self.empty_label = tk.Label(
+        self.empty_label = ctk.CTkLabel(
             self.body,
             text="No bottles available",
-            fg="gray40",
-            bg="#FFFFFF",
-            font=("Arial", 18, "bold"),
+            font=("Roboto", 24, "bold"),
+            text_color="gray"
         )
 
-        self.rows_frame = tk.Frame(self.body, bg="#FFFFFF")
+        self.rows_frame = ctk.CTkScrollableFrame(
+            self.body, 
+            fg_color="transparent",
+            scrollbar_button_color="#E2E8F0"
+        )
 
     def _build_footer(self):
-        footer = tk.Frame(self, bg="#FFFFFF")
-        footer.pack(fill="x", padx=30, pady=(10, 20))
+        footer = ctk.CTkFrame(self, fg_color="white", height=100, corner_radius=0)
+        footer.pack(fill="x", padx=30, pady=20)
 
-        back_btn = tk.Button(
+        ctk.CTkButton(
             footer,
-            text="BACK",
-            command=self._on_back,
-            bg="#2b313c",
-            fg="white",
-            font=("Arial", 12, "bold"),
-            padx=24,
-            pady=10,
-            relief="flat",
-        )
-        back_btn.pack(side="left")
-
-        start_btn = tk.Button(
-            footer,
-            text="START POUR",
+            text="START POURING",
             command=self._on_start,
-            bg="#1f6feb",
-            fg="white",
-            font=("Arial", 12, "bold"),
-            padx=24,
-            pady=10,
-            relief="flat",
-        )
-        start_btn.pack(side="right")
+            fg_color=self.COLOR_SUCCESS,
+            hover_color="#047857",
+            text_color="white",
+            font=("Roboto", 20, "bold"),
+            height=60,
+            corner_radius=30
+        ).pack(fill="x")
 
     def refresh(self):
         for widget in self.rows_frame.winfo_children():
@@ -108,164 +100,124 @@ class CustomMixScreen(tk.Frame):
             self._add_row(bottle, limit["min_ml"], limit["max_ml"])
 
     def _add_row(self, bottle, min_ml, max_ml):
-        row = tk.Frame(self.rows_frame, bg="#F8FAFC", highlightthickness=1, highlightbackground="#E2E8F0")
-        row.pack(fill="x", pady=8)
+        row = ctk.CTkFrame(self.rows_frame, fg_color="#F8FAFC", corner_radius=16, border_width=1, border_color="#E2E8F0")
+        row.pack(fill="x", pady=10)
 
-        name_label = tk.Label(
+        # Name
+        ctk.CTkLabel(
             row,
             text=bottle["name"],
-            fg="#1E293B",
-            bg="#F8FAFC",
-            font=("Arial", 14, "bold"),
-            width=16,
-            anchor="w",
-        )
-        name_label.pack(side="left", padx=16, pady=12)
+            font=("Roboto", 18, "bold"),
+            text_color=self.COLOR_TEXT,
+            width=150,
+            anchor="w"
+        ).pack(side="left", padx=20, pady=20)
 
-        value_var = tk.IntVar(value=min_ml)
-        scale = tk.Scale(
+        # Slider Logic
+        value_var = threading.local() # Using int var in CTk is tricky with threads sometimes, just use normal var
+        # Actually CTkSlider uses fluid float. We need a way to track it.
+        # Let's use a class attribute or dictionary to store current value for this row.
+        
+        # We'll use the dictionary 'row_data' to store state
+        row_data = {
+            "bottle_id": bottle["id"],
+            "value": min_ml,
+            "min": min_ml,
+            "max": max_ml
+        }
+
+        def update_val(val):
+            val = int(val)
+            row_data["value"] = val
+            entry.configure(state="normal")
+            entry.delete(0, "end")
+            entry.insert(0, str(val))
+            # entry.configure(state="disabled") # Keep editable?
+
+        slider = ctk.CTkSlider(
             row,
             from_=min_ml,
             to=max_ml,
-            orient="horizontal",
-            showvalue=False,
-            variable=value_var,
-            length=320,
-            bg="#F8FAFC",
-            troughcolor="#E2E8F0",
-            activebackground="#2563EB",
-            highlightthickness=0,
+            number_of_steps=(max_ml-min_ml),
+            command=update_val,
+            height=20,
+            progress_color=self.COLOR_SUCCESS,
+            button_color=self.COLOR_SUCCESS,
+            button_hover_color="#047857"
         )
-        scale.pack(side="left", padx=10, pady=10)
+        slider.set(min_ml)
+        slider.pack(side="left", fill="x", expand=True, padx=20)
 
-        entry = tk.Entry(
+        # Value Entry/Display
+        entry = ctk.CTkEntry(
             row,
-            width=6,
+            width=60,
+            font=("Roboto", 18, "bold"),
             justify="center",
-            font=("Arial", 12, "bold"),
-            bg="#FFFFFF",
-            fg="black",
-            insertbackground="black",
-            relief="flat",
+            corner_radius=10
         )
-        entry.pack(side="left", padx=10)
         entry.insert(0, str(min_ml))
+        entry.pack(side="left", padx=(0, 10))
+        
+        def on_entry(event):
+            try:
+                val = int(entry.get())
+                val = max(min_ml, min(max_ml, val))
+                slider.set(val)
+                row_data["value"] = val
+            except:
+                pass
+        
+        entry.bind("<Return>", on_entry)
+        entry.bind("<FocusOut>", on_entry)
 
-        unit = tk.Label(
+        ctk.CTkLabel(
             row,
             text="ml",
-            fg="#64748B",
-            bg="#F8FAFC",
-            font=("Arial", 12, "bold"),
-        )
-        unit.pack(side="left", padx=(0, 16))
+            font=("Roboto", 16),
+            text_color="gray"
+        ).pack(side="left", padx=(0, 20))
 
-        hint = tk.Label(
-            row,
-            text=f"{min_ml} - {max_ml} ml",
-            fg="#94A3B8",
-            bg="#F8FAFC",
-            font=("Arial", 10),
-        )
-        hint.pack(side="right", padx=16)
-
-        def on_scale(_value):
-            entry.delete(0, tk.END)
-            entry.insert(0, str(value_var.get()))
-
-        def on_entry_change(_event=None):
-            raw = entry.get().strip()
-            try:
-                value = int(raw)
-            except ValueError:
-                value = min_ml
-            value = max(min_ml, min(max_ml, value))
-            value_var.set(value)
-            entry.delete(0, tk.END)
-            entry.insert(0, str(value))
-
-        scale.configure(command=on_scale)
-        entry.bind("<Return>", on_entry_change)
-        entry.bind("<FocusOut>", on_entry_change)
-
-        self.rows.append(
-            {
-                "bottle_id": bottle["id"],
-                "name": bottle["name"],
-                "var": value_var,
-                "min_ml": min_ml,
-                "max_ml": max_ml,
-            }
-        )
+        self.rows.append(row_data)
 
     def _on_start(self):
-        """Handle custom mix start"""
-        payload = {row["bottle_id"]: row["var"].get() for row in self.rows}
-        print(f"Custom mix: {payload}")
-        
-        # Get pour engine from controller
+        payload = {r["bottle_id"]: r["value"] for r in self.rows if r["value"] > 0}
+        if not payload:
+             self._show_error("Please select at least one ingredient.")
+             return
+             
         if not hasattr(self.controller, 'pour_engine'):
-            self._show_error("System not ready. Please restart the application.")
+            self._show_error("System error: Pour engine missing.")
             return
-        
+            
         self._send_dispense(lambda: self.controller.pour_engine.dispense_custom(payload))
 
     def _send_dispense(self, action):
-        """Run dispense command without blocking UI"""
+         # ... Reuse worker logic ...
         def worker():
             success, message, msg_id, payload = action()
-
             def finish():
                 if success:
-                    print(f"Custom dispense successful: {message} (msg_id: {msg_id})")
+                    print(f"Custom dispense successful: {message}")
                     self.controller.show_screen("processing")
                     screen = self.controller.get_screen("processing")
                     if screen:
                         relays = [job["relay"] for job in payload.get("jobs", [])]
                         screen.start_transaction(payload, msg_id, relays)
                 else:
-                    print(f"Custom dispense failed: {message}")
-                    if payload:
-                        self.controller.show_screen("processing")
-                        screen = self.controller.get_screen("processing")
-                        if screen:
-                            screen.start_failure(message, payload)
-                    else:
-                        self._show_error(message)
-
+                    self._show_error(message)
             self.after(0, finish)
-
         threading.Thread(target=worker, daemon=True).start()
-    
+
     def _show_error(self, message):
-        """Display error popup"""
-        popup = tk.Toplevel(self)
-        popup.title("Error")
+        # reuse logic from MenuScreen ideally, but for now duplicate concise version
+        popup = ctk.CTkToplevel(self)
+        popup.title("Info")
         popup.geometry("400x200")
-        popup.configure(bg="#FFFFFF")
+        popup.transient(self)
         
-        label = tk.Label(
-            popup,
-            text=message,
-            fg="black",
-            bg="#FFFFFF",
-            font=("Arial", 14),
-            wraplength=350
-        )
-        label.pack(expand=True, pady=20)
-        
-        button = tk.Button(
-            popup,
-            text="OK",
-            command=popup.destroy,
-            bg="#e94560",
-            fg="white",
-            font=("Arial", 12, "bold"),
-            padx=30,
-            pady=10,
-            relief="flat"
-        )
-        button.pack(pady=10)
+        ctk.CTkLabel(popup, text=message, font=("Roboto", 16), wraplength=350).pack(expand=True)
+        ctk.CTkButton(popup, text="OK", command=popup.destroy, width=100).pack(pady=20)
 
     def _on_back(self):
         self.controller.show_screen("menu")
