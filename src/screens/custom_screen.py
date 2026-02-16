@@ -6,7 +6,7 @@ from src.core.database import init_database
 
 class CustomMixScreen(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="#0f1115")
+        super().__init__(parent, bg="#FFFFFF")
         self.controller = controller
         self.database = init_database()
         self.rows = []
@@ -18,14 +18,14 @@ class CustomMixScreen(tk.Frame):
         self.refresh()
 
     def _build_header(self):
-        header = tk.Frame(self, bg="#0f1115")
+        header = tk.Frame(self, bg="#FFFFFF")
         header.pack(fill="x", padx=30, pady=(20, 10))
 
         title = tk.Label(
             header,
             text="CUSTOM MIX",
-            fg="white",
-            bg="#0f1115",
+            fg="black",
+            bg="#FFFFFF",
             font=("Arial", 26, "bold"),
         )
         title.pack(side="left")
@@ -44,21 +44,21 @@ class CustomMixScreen(tk.Frame):
         back_btn.pack(side="right")
 
     def _build_body(self):
-        self.body = tk.Frame(self, bg="#0f1115")
+        self.body = tk.Frame(self, bg="#FFFFFF")
         self.body.pack(fill="both", expand=True, padx=30, pady=(10, 10))
 
         self.empty_label = tk.Label(
             self.body,
             text="No bottles available",
-            fg="white",
-            bg="#0f1115",
+            fg="gray40",
+            bg="#FFFFFF",
             font=("Arial", 18, "bold"),
         )
 
-        self.rows_frame = tk.Frame(self.body, bg="#0f1115")
+        self.rows_frame = tk.Frame(self.body, bg="#FFFFFF")
 
     def _build_footer(self):
-        footer = tk.Frame(self, bg="#0f1115")
+        footer = tk.Frame(self, bg="#FFFFFF")
         footer.pack(fill="x", padx=30, pady=(10, 20))
 
         back_btn = tk.Button(
@@ -108,14 +108,14 @@ class CustomMixScreen(tk.Frame):
             self._add_row(bottle, limit["min_ml"], limit["max_ml"])
 
     def _add_row(self, bottle, min_ml, max_ml):
-        row = tk.Frame(self.rows_frame, bg="#141821", highlightthickness=1, highlightbackground="#2b313c")
+        row = tk.Frame(self.rows_frame, bg="#F8FAFC", highlightthickness=1, highlightbackground="#E2E8F0")
         row.pack(fill="x", pady=8)
 
         name_label = tk.Label(
             row,
             text=bottle["name"],
-            fg="white",
-            bg="#141821",
+            fg="#1E293B",
+            bg="#F8FAFC",
             font=("Arial", 14, "bold"),
             width=16,
             anchor="w",
@@ -131,9 +131,9 @@ class CustomMixScreen(tk.Frame):
             showvalue=False,
             variable=value_var,
             length=320,
-            bg="#141821",
-            troughcolor="#2b313c",
-            activebackground="#1f6feb",
+            bg="#F8FAFC",
+            troughcolor="#E2E8F0",
+            activebackground="#2563EB",
             highlightthickness=0,
         )
         scale.pack(side="left", padx=10, pady=10)
@@ -143,9 +143,9 @@ class CustomMixScreen(tk.Frame):
             width=6,
             justify="center",
             font=("Arial", 12, "bold"),
-            bg="#0f1115",
-            fg="white",
-            insertbackground="white",
+            bg="#FFFFFF",
+            fg="black",
+            insertbackground="black",
             relief="flat",
         )
         entry.pack(side="left", padx=10)
@@ -154,8 +154,8 @@ class CustomMixScreen(tk.Frame):
         unit = tk.Label(
             row,
             text="ml",
-            fg="#9aa4b2",
-            bg="#141821",
+            fg="#64748B",
+            bg="#F8FAFC",
             font=("Arial", 12, "bold"),
         )
         unit.pack(side="left", padx=(0, 16))
@@ -163,8 +163,8 @@ class CustomMixScreen(tk.Frame):
         hint = tk.Label(
             row,
             text=f"{min_ml} - {max_ml} ml",
-            fg="#7f8c8d",
-            bg="#141821",
+            fg="#94A3B8",
+            bg="#F8FAFC",
             font=("Arial", 10),
         )
         hint.pack(side="right", padx=16)
@@ -242,13 +242,13 @@ class CustomMixScreen(tk.Frame):
         popup = tk.Toplevel(self)
         popup.title("Error")
         popup.geometry("400x200")
-        popup.configure(bg="#1a1a2e")
+        popup.configure(bg="#FFFFFF")
         
         label = tk.Label(
             popup,
             text=message,
-            fg="white",
-            bg="#1a1a2e",
+            fg="black",
+            bg="#FFFFFF",
             font=("Arial", 14),
             wraplength=350
         )

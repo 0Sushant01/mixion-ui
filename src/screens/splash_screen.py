@@ -19,7 +19,7 @@ except (ImportError, OSError) as e:
 
 class SplashScreen(tk.Frame):
     def __init__(self, parent, controller, video_path):
-        super().__init__(parent, bg="black")
+        super().__init__(parent, bg="white")
         self.controller = controller
         self.video_path = video_path
         self.player = None
@@ -33,8 +33,8 @@ class SplashScreen(tk.Frame):
             self,
             text="TAP SCREEN TO CONTINUE",
             font=("Arial", 24, "bold"),
-            fg="white",
-            bg="black",
+            fg="black",
+            bg="white",
             cursor="hand2"
         )
         self.instruction_label.pack(expand=True)
@@ -57,7 +57,7 @@ class SplashScreen(tk.Frame):
         """Pulse animation for instruction label"""
         try:
             current_fg = self.instruction_label.cget("fg")
-            new_fg = "#AAAAAA" if current_fg == "white" else "white"
+            new_fg = "#555555" if current_fg == "black" else "black"
             self.instruction_label.config(fg=new_fg)
             self.after(700, self._animate_label)
         except:

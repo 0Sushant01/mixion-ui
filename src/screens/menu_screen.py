@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import os
 import customtkinter as ctk
 from PIL import Image
 
@@ -9,19 +10,20 @@ from src.screens.splash_screen import play_splash_video
 
 class MenuScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent, fg_color="#0b0f14", corner_radius=0)
+        super().__init__(parent, fg_color="#FFFFFF", corner_radius=0)
         self.controller = controller
         self.database = controller.database
         self._drink_buttons = []
         self._status_poll_id = None
         self._status_request_id = None
+        self._images = [] # Keep references to avoid garbage collection
 
         # Main Layout
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)  # Content area expands
 
         # --- Header ---
-        self.header = ctk.CTkFrame(self, fg_color="#0b0f14", height=80, corner_radius=0)
+        self.header = ctk.CTkFrame(self, fg_color="#FFFFFF", height=80, corner_radius=0)
         self.header.grid(row=0, column=0, sticky="ew", padx=30, pady=(20, 10))
         self.header.grid_columnconfigure(1, weight=1)  # Spacer
 
@@ -33,7 +35,7 @@ class MenuScreen(ctk.CTkFrame):
             self.title_frame,
             text="MIXION",
             font=("Roboto", 32, "bold"),
-            text_color="white"
+            text_color="black"
         )
         self.title_label.pack(side="left")
 
@@ -41,7 +43,7 @@ class MenuScreen(ctk.CTkFrame):
             self.title_frame,
             text="Select Your Drink",
             font=("Roboto", 16),
-            text_color="#9aa4b2"
+            text_color="gray40"
         )
         self.subtitle_label.pack(side="left", padx=(15, 0), pady=(8, 0))
 
@@ -133,52 +135,114 @@ class MenuScreen(ctk.CTkFrame):
             col = idx % 3
             self._create_drink_card(drink, row, col)
 
+    def _load_drink_image(self, drink_id):
+        """Load image from assets/drinks/{id}.[png|jpg] or return None"""
+        if not hasattr(config, 'DRINK_IMAGES_DIR'):
+             return None
+             
+        extensions = ['.png', '.jpg', '.jpeg']
+        for ext in extensions:
+            path = os.path.join(config.DRINK_IMAGES_DIR, f"{drink_id}{ext}")
+            if os.path.exists(path):
+                try:
+                    pil_img = Image.open(path)
+                    # Resize to fit the card image area (approx 300x200 or similar)
+                    return ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(250, 180))
+                except Exception as e:
+                    print(f"Error loading image for drink {drink_id}: {e}")
+                    return None
+        return None
+
     def _create_drink_card(self, drink, row, col):
         is_custom = drink["id"] == "custom"
         
-        card_color = "#161b22" if not is_custom else "#0f291e" # Darker green hint for custom
-        border_color = "#2b313c" if not is_custom else "#10b981"
-        accent_color = "#3b82f6" if not is_custom else "#10b981"
-        hover_color = "#2563eb" if not is_custom else "#059669"
+        # Light theme colors
+        card_color = "#F8FAFC" if not is_custom else "#F0FDF4"
+        border_color = "#E2E8F0" if not is_custom else "#BBF7D0"
+        text_color = "#1E293B"
+        subtext_color = "#64748B"
+        accent_color = "#3B82F6" if not is_custom else "#10B981"
+        hover_color = "#2563EB" if not is_custom else "#059669"
 
         card = ctk.CTkFrame(
             self.content,
             fg_color=card_color,
             border_width=1,
             border_color=border_color,
-            corner_radius=15
+            corner_radius=16
         )
-        card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+        card.grid(row=row, column=col, padx=12, pady=12, sticky="nsew")
 
-        # Image / Icon Placeholder
-        icon_frame = ctk.CTkFrame(
-            card,
-            fg_color="#0d1117",
-            height=120,
-            corner_radius=10
-        )
-        icon_frame.pack(fill="x", padx=15, pady=15)
-        icon_frame.pack_propagate(False)
+        # Image / Icon Area
+        # Try to load image
+        drink_image = self._load_drink_image(drink["id"]) if not is_custom else None
+        
+        if drink_image:
+            self._images.append(drink_image) # Keep reference
+            img_label = ctk.CTkLabel(
+                card,
+                text="",
+                image=drink_image,
+                corner_radius=12
+            )
+            img_label.pack(fill="x", padx=0, pady=(0, 10))
+            # Hack to round top corners? CTk doesn't support partial radius easily. 
+            # We'll just stick to standard image for now.
+        else:
+            # Fallback to Icon
+            icon_frame = ctk.CTkFrame(
+                card,
+                fg_color="#F1F5F9" if not is_custom else "#DCFCE7",
+                height=140,
+                corner_radius=12
+            )
+            icon_frame.pack(fill="x", padx=15, pady=15)
+            icon_frame.pack_propagate(False)
 
-        icon_text = "🍸" if not is_custom else "🧪"
-        ctk.CTkLabel(
-            icon_frame,
-            text=icon_text,
-            font=("Segoe UI Emoji", 48), # Use system emoji font if possible, or fallback
-            text_color="#4b5563"
-        ).place(relx=0.5, rely=0.5, anchor="center")
+            icon_text = "🍸" if not is_custom else "🧪"
+            ctk.CTkLabel(
+                icon_frame,
+                text=icon_text,
+                font=("Segoe UI Emoji", 56),
+                text_color="#94A3B8" if not is_custom else "#10B981"
+            ).place(relx=0.5, rely=0.5, anchor="center")
 
         # Drink Name
         display_name = drink["name"] if not is_custom else "Design Your Own"
         ctk.CTkLabel(
             card,
             text=display_name,
-            font=("Roboto", 18, "bold"),
-            text_color="white",
-            wraplength=200
-        ).pack(fill="x", padx=15, pady=(0, 5))
+            font=("Roboto", 20, "bold"),
+            text_color=text_color,
+            wraplength=220
+        ).pack(fill="x", padx=15, pady=(5, 2))
 
-        # Price
+        # Ingredients (Fetch from DB)
+        ingredients_text = ""
+        if not is_custom:
+            try:
+                recipes = self.database.get_recipes_for_drink(drink["id"])
+                # recipes returned as list of dicts with 'bottle_name'
+                ing_names = [r['bottle_name'] for r in recipes]
+                ingredients_text = ", ".join(ing_names)
+            except Exception as e:
+                print(f"Error fetching recipes: {e}")
+                ingredients_text = "Ingredients info unavailable"
+        else:
+            ingredients_text = "Mix your own custom drink"
+
+        if ingredients_text:
+             ctk.CTkLabel(
+                card,
+                text=ingredients_text,
+                font=("Roboto", 13),
+                text_color=subtext_color,
+                wraplength=220,
+                height=40 # Fixed height for alignment
+            ).pack(fill="x", padx=15, pady=(0, 10))
+
+
+        # Price (shifted down)
         price_text = " "
         if not is_custom and drink.get("price"):
             price_text = f"${drink['price']}"
@@ -186,12 +250,12 @@ class MenuScreen(ctk.CTkFrame):
         ctk.CTkLabel(
             card,
             text=price_text,
-            font=("Roboto", 14),
-            text_color="#9aa4b2"
+            font=("Roboto", 16, "bold"),
+            text_color=text_color
         ).pack(fill="x", padx=15, pady=(0, 15))
 
         # Select Button
-        btn_text = "SELECT" if not is_custom else "START MIXING"
+        btn_text = "Order Now" if not is_custom else "Start Mixing"
         command = (self._on_custom if is_custom else lambda d=drink: self._on_drink(d))
         
         btn = ctk.CTkButton(
@@ -202,8 +266,8 @@ class MenuScreen(ctk.CTkFrame):
             hover_color=hover_color,
             text_color="white",
             font=("Roboto", 14, "bold"),
-            height=40,
-            corner_radius=8
+            height=44,
+            corner_radius=10
         )
         btn.pack(fill="x", padx=15, pady=(0, 20))
         

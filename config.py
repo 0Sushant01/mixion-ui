@@ -39,3 +39,9 @@ COLOR_ACCENT = "#0f3460"
 COLOR_HIGHLIGHT = "#e94560"
 COLOR_TEXT = "#ffffff"
 COLOR_TEXT_SECONDARY = "#a0a0a0"
+
+# Paths
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+DRINK_IMAGES_DIR = os.path.join(ASSETS_DIR, "drinks")

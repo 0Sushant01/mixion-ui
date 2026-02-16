@@ -14,7 +14,7 @@ class ProcessingScreen(tk.Frame):
     """Screen shown while drink is being dispensed"""
     
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="#0a0e27")
+        super().__init__(parent, bg="#FFFFFF")
         self.controller = controller
 
         self.current_msg_id = None
@@ -25,15 +25,15 @@ class ProcessingScreen(tk.Frame):
         self._is_finished = False
         
         # Main content
-        content = tk.Frame(self, bg="#0a0e27")
+        content = tk.Frame(self, bg="#FFFFFF")
         content.place(relx=0.5, rely=0.45, anchor="center")
         
         # Animated dots will be added to this
         self.message_label = tk.Label(
             content,
             text="Preparing your drink",
-            fg="#ffffff",
-            bg="#0a0e27",
+            fg="#1E293B",
+            bg="#FFFFFF",
             font=("Arial", 32, "bold")
         )
         self.message_label.pack(pady=(0, 30))
@@ -42,8 +42,8 @@ class ProcessingScreen(tk.Frame):
         self.dots_label = tk.Label(
             content,
             text="",
-            fg="#3b82f6",
-            bg="#0a0e27",
+            fg="#3B82F6",
+            bg="#FFFFFF",
             font=("Arial", 32, "bold")
         )
         self.dots_label.pack()
@@ -52,22 +52,22 @@ class ProcessingScreen(tk.Frame):
         self.status_label = tk.Label(
             content,
             text="",
-            fg="#9aa4b2",
-            bg="#0a0e27",
+            fg="#64748B",
+            bg="#FFFFFF",
             font=("Arial", 16)
         )
         self.status_label.pack(pady=(10, 0))
 
         # Log area
-        self.log_frame = tk.Frame(self, bg="#0a0e27")
+        self.log_frame = tk.Frame(self, bg="#FFFFFF")
         self.log_frame.pack(fill="both", expand=True, padx=60, pady=(20, 20))
 
         self.log_text = tk.Text(
             self.log_frame,
             height=8,
-            bg="#0f172a",
-            fg="#e2e8f0",
-            insertbackground="#e2e8f0",
+            bg="#F1F5F9",
+            fg="#334155",
+            insertbackground="#334155",
             font=("Consolas", 11),
             relief="flat",
             wrap="word"
@@ -157,7 +157,7 @@ class ProcessingScreen(tk.Frame):
     
     def reset(self):
         """Reset to initial state"""
-        self.message_label.config(text="Preparing your drink", fg="#ffffff")
+        self.message_label.config(text="Preparing your drink", fg="#1E293B")
         self.dots_label.config(text="")
         self.status_label.config(text="")
         self.return_button.pack_forget()

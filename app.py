@@ -5,7 +5,7 @@ from src.core.database import init_database
 from src.screens.splash_screen import play_splash_video
 import customtkinter as ctk
 
-ctk.set_appearance_mode("Dark")
+ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
 
