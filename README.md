@@ -173,11 +173,13 @@ The ESP32 receives this and runs multiple pumps in parallel for the specified du
 ### Python Dependencies
 
 ```
-python-vlc
-paho-mqtt
+paho-mqtt>=1.6.1      # MQTT client for ESP32 communication
+python-vlc>=3.0.16120 # Video playback (requires VLC installed)
 ```
 
 Installed automatically with: `pip install -r requirements.txt`
+
+> 📖 **For complete framework and technology details**, see [DEPENDENCIES.md](DEPENDENCIES.md)
 
 ## ⚙️ Configuration
 

@@ -22,6 +22,12 @@ Database (SQLite)
 pip install -r requirements.txt
 ```
 
+This installs:
+- `paho-mqtt>=1.6.1` - MQTT client for ESP32 communication
+- `python-vlc>=3.0.16120` - Video playback library
+
+> 📖 **For complete framework and technology details**, see [DEPENDENCIES.md](DEPENDENCIES.md)
+
 ### 2. Configure MQTT Broker
 
 Edit [config.py](config.py) and set your MQTT broker IP:
