@@ -29,6 +29,7 @@ class Database:
     def init_database(self):
         with self.get_connection() as conn:
             self._create_tables(conn)
+            self._migrate_schema(conn)
             self._insert_defaults(conn)
         print(f"Database initialized: {self.db_path}")
 
@@ -40,6 +41,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 position INTEGER NOT NULL UNIQUE,
+                flow_rate REAL NOT NULL DEFAULT 10.0,
                 enabled INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -85,6 +87,22 @@ class Database:
             ON bottles(position)
         """)
 
+    def _migrate_schema(self, conn):
+        """Auto-migrate database schema for new columns"""
+        cursor = conn.cursor()
+        
+        # Check if flow_rate column exists in bottles table
+        cursor.execute("PRAGMA table_info(bottles)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'flow_rate' not in columns:
+            print("  → Migrating: Adding flow_rate column to bottles table...")
+            cursor.execute("""
+                ALTER TABLE bottles 
+                ADD COLUMN flow_rate REAL NOT NULL DEFAULT 10.0
+            """)
+            print("  ✓ Migration complete: flow_rate column added")
+
     def _insert_defaults(self, conn):
         cursor = conn.cursor()
 
@@ -93,12 +111,12 @@ class Database:
 
         if bottle_count == 0:
             default_bottles = [
-                ("Bottle A", 1),
-                ("Bottle B", 2),
-                ("Bottle C", 3),
+                ("Bottle A", 1, 10.0),
+                ("Bottle B", 2, 10.0),
+                ("Bottle C", 3, 10.0),
             ]
             cursor.executemany(
-                "INSERT INTO bottles (name, position) VALUES (?, ?)",
+                "INSERT INTO bottles (name, position, flow_rate) VALUES (?, ?, ?)",
                 default_bottles
             )
             print("Inserted default bottles")
@@ -130,21 +148,28 @@ class Database:
             cursor.execute("SELECT * FROM bottles WHERE enabled = 1 ORDER BY position")
             return [dict(row) for row in cursor.fetchall()]
 
-    def add_bottle(self, name, position):
+    def get_bottle_by_id(self, bottle_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM bottles WHERE id = ?", (bottle_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def add_bottle(self, name, position, flow_rate=10.0):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO bottles (name, position, enabled) VALUES (?, ?, 1)",
-                (name, position)
+                "INSERT INTO bottles (name, position, flow_rate, enabled) VALUES (?, ?, ?, 1)",
+                (name, position, flow_rate)
             )
             return cursor.lastrowid
 
-    def update_bottle(self, bottle_id, name, position, enabled):
+    def update_bottle(self, bottle_id, name, position, flow_rate, enabled):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE bottles SET name = ?, position = ?, enabled = ? WHERE id = ?",
-                (name, position, enabled, bottle_id)
+                "UPDATE bottles SET name = ?, position = ?, flow_rate = ?, enabled = ? WHERE id = ?",
+                (name, position, flow_rate, enabled, bottle_id)
             )
 
     def delete_bottle(self, bottle_id):
@@ -192,7 +217,7 @@ class Database:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT r.*, b.name as bottle_name, b.position
+                SELECT r.*, b.name as bottle_name, b.position, b.flow_rate
                 FROM recipes r
                 JOIN bottles b ON r.bottle_id = b.id
                 WHERE r.drink_id = ?

@@ -169,7 +169,54 @@ class MenuScreen(tk.Frame):
         return card
 
     def _on_drink(self, drink):
+        """Handle drink selection"""
         print(f"Selected drink: {drink['name']} (ID: {drink['id']})")
+        
+        # Get pour engine from controller
+        if not hasattr(self.controller, 'pour_engine'):
+            self._show_error("System not ready. Please restart the application.")
+            return
+        
+        # Dispense the drink
+        success, message, msg_id = self.controller.pour_engine.dispense_drink(drink['id'])
+        
+        if success:
+            print(f"Dispense successful: {message} (msg_id: {msg_id})")
+            # Navigate to processing screen
+            self.controller.show_screen("processing")
+        else:
+            print(f"Dispense failed: {message}")
+            self._show_error(message)
+    
+    def _show_error(self, message):
+        """Display error popup"""
+        popup = tk.Toplevel(self)
+        popup.title("Error")
+        popup.geometry("400x200")
+        popup.configure(bg="#1a1a2e")
+        
+        label = tk.Label(
+            popup,
+            text=message,
+            fg="white",
+            bg="#1a1a2e",
+            font=("Arial", 14),
+            wraplength=350
+        )
+        label.pack(expand=True, pady=20)
+        
+        button = tk.Button(
+            popup,
+            text="OK",
+            command=popup.destroy,
+            bg="#e94560",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=30,
+            pady=10,
+            relief="flat"
+        )
+        button.pack(pady=10)
 
     def _on_custom(self):
         self.controller.show_screen("custom")

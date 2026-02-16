@@ -30,7 +30,7 @@ class SplashScreen(tk.Frame):
 
     def _init_vlc(self):
         try:
-            self.instance = vlc.Instance('--no-xlib')
+            self.instance = vlc.Instance('--no-xlib --avcodec-hw=none --no-hw-decoding')
             self.player = self.instance.media_player_new()
             
             media = self.instance.media_new(self.video_path)

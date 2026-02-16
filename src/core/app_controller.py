@@ -1,7 +1,12 @@
 import tkinter as tk
 
+import config
+from src.core.database import init_database
+from src.core.mqtt_client import MQTTClient
+from src.core.pour_engine import PourEngine
 from src.screens.custom_screen import CustomMixScreen
 from src.screens.menu_screen import MenuScreen
+from src.screens.processing_screen import ProcessingScreen
 from src.screens.splash_screen import SplashScreen
 
 
@@ -12,6 +17,21 @@ class MixionApp(tk.Tk):
         self.configure(bg="black")
         self.attributes("-fullscreen", True)
 
+        # Initialize core components
+        self.database = init_database()
+        self.mqtt_client = MQTTClient(
+            broker=config.MQTT_BROKER,
+            port=config.MQTT_PORT,
+            device_id=config.DEVICE_ID
+        )
+        self.pour_engine = PourEngine(self.database, self.mqtt_client)
+        
+        # Try to connect to MQTT broker
+        if self.mqtt_client.connect():
+            print("✓ MQTT client connected")
+        else:
+            print("⚠ MQTT client not connected - commands will fail")
+
         self._container = tk.Frame(self, bg="black")
         self._container.pack(fill="both", expand=True)
 
@@ -19,12 +39,16 @@ class MixionApp(tk.Tk):
             "splash": SplashScreen(self._container, self, video_path=video_path),
             "menu": MenuScreen(self._container, self),
             "custom": CustomMixScreen(self._container, self),
+            "processing": ProcessingScreen(self._container, self),
         }
 
         for screen in self._screens.values():
             screen.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         self.show_screen("splash")
+        
+        # Handle window close
+        self.protocol("WM_DELETE_WINDOW", self.quit)
 
     def show_screen(self, name):
         if name == "menu":
@@ -35,6 +59,12 @@ class MixionApp(tk.Tk):
         if hasattr(screen, "refresh"):
             screen.refresh()
         screen.tkraise()
+
+    def quit(self):
+        """Clean shutdown"""
+        print("Shutting down...")
+        self.mqtt_client.disconnect()
+        self.destroy()
 
     def run(self):
         self.mainloop()
