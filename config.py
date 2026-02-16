@@ -44,4 +44,4 @@ COLOR_TEXT_SECONDARY = "#a0a0a0"
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-DRINK_IMAGES_DIR = os.path.join(ASSETS_DIR, "drinks")
+DRINK_IMAGES_DIR = os.path.join(ASSETS_DIR, "images") # Changed to match user preference
