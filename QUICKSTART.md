@@ -10,11 +10,11 @@ pip install -r requirements.txt
 
 This installs:
 - `paho-mqtt` - MQTT communication with ESP32
-- `python-vlc` - Video playback for splash screen
+- `python-mpv` - Video playback for splash screen
 
-### 2️⃣ Install VLC Media Player
+### 2️⃣ Install MPV Media Player
 
-Download and install VLC: https://www.videolan.org/vlc/
+Download and install MPV: https://mpv.io/installation/
 
 Required for video playback on splash screen.
 
@@ -84,7 +84,7 @@ Starting Mixion Application...
 
 Database initialized: database/mixion.db
 ✓ MQTT client connected
-VLC initialized: assets/video/promo.mp4
+MPV initialized: assets/video/promo.mp4
 ```
 
 > **✨ Auto-Migration:** The database is automatically created and migrated on first run. If upgrading from an older version, the `flow_rate` column will be added automatically - no manual migration needed!
@@ -203,8 +203,8 @@ mosquitto_pub -h 192.168.1.100 -t "mixion/command/esp32_1" -m '{
 ### Issue: "Video playback unavailable"
 
 **Solution:**
-1. Install VLC media player
-2. Reinstall python-vlc: `pip install --upgrade python-vlc`
+1. Install MPV media player
+2. Reinstall python-mpv: `pip install --upgrade python-mpv`
 3. Check video path in config.py
 4. Place a video at `assets/video/promo.mp4`
 
@@ -270,7 +270,7 @@ Press ESC to exit fullscreen mode (if enabled).
 ## ✅ Verification Checklist
 
 - [ ] Python dependencies installed
-- [ ] VLC installed
+- [ ] MPV installed
 - [ ] MQTT broker accessible
 - [ ] config.py configured
 - [ ] Sample data loaded

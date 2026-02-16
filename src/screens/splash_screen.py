@@ -1,12 +1,13 @@
 import platform
 import tkinter as tk
+import os
 
 try:
-    import vlc
-    VLC_AVAILABLE = True
+    import mpv
+    MPV_AVAILABLE = True
 except ImportError:
-    VLC_AVAILABLE = False
-    print("Warning: python-vlc not installed. Video playback disabled.")
+    MPV_AVAILABLE = False
+    print("Warning: python-mpv not installed. Video playback disabled.")
 
 
 class SplashScreen(tk.Frame):
@@ -23,31 +24,39 @@ class SplashScreen(tk.Frame):
         self.video_frame.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
 
-        if VLC_AVAILABLE:
-            self._init_vlc()
+        if MPV_AVAILABLE:
+            self._init_mpv()
         else:
             self._show_error_message()
 
-    def _init_vlc(self):
+    def _init_mpv(self):
         try:
-            self.instance = vlc.Instance('--no-xlib --avcodec-hw=none --no-hw-decoding')
-            self.player = self.instance.media_player_new()
+            # Get absolute path for video
+            video_abs_path = os.path.abspath(self.video_path)
             
-            media = self.instance.media_new(self.video_path)
-            media.add_option('input-repeat=65535')
+            # Create MPV player instance
+            self.player = mpv.MPV(
+                wid=str(self.video_frame.winfo_id()),
+                loop='inf',
+                vo='x11' if platform.system() == 'Linux' else 'gpu',
+                keep_open='yes',
+                input_default_bindings=False,
+                input_vo_keyboard=False,
+                osc=False
+            )
             
-            self.player.set_media(media)
-            self.player.audio_set_volume(100)
+            # Load video
+            self.player.play(video_abs_path)
             
-            print(f"VLC initialized: {self.video_path}")
+            print(f"MPV initialized: {self.video_path}")
         except Exception as e:
-            print(f"Error initializing VLC: {e}")
+            print(f"Error initializing MPV: {e}")
             self._show_error_message()
 
     def _show_error_message(self):
         label = tk.Label(
             self.video_frame,
-            text="Video playback unavailable\n\nInstall VLC and python-vlc\n\nTap to continue",
+            text="Video playback unavailable\n\nInstall MPV and python-mpv\n\nTap to continue",
             fg="white",
             bg="black",
             font=("Arial", 16),
@@ -61,14 +70,10 @@ class SplashScreen(tk.Frame):
         self.video_frame.update()
         
         try:
-            if platform.system() == "Windows":
-                self.player.set_hwnd(self.video_frame.winfo_id())
-            elif platform.system() == "Linux":
-                self.player.set_xwindow(self.video_frame.winfo_id())
-            elif platform.system() == "Darwin":
-                self.player.set_nsobject(self.video_frame.winfo_id())
-            
-            self.player.play()
+            # MPV starts playback automatically when initialized
+            # Just ensure it's playing
+            if hasattr(self.player, 'pause'):
+                self.player.pause = False
             print("Video playback started")
         except Exception as e:
             print(f"Error starting playback: {e}")
@@ -78,7 +83,7 @@ class SplashScreen(tk.Frame):
             return
         
         try:
-            self.player.stop()
+            self.player.terminate()
             print("Video playback stopped")
         except Exception as e:
             print(f"Error stopping playback: {e}")

@@ -147,7 +147,7 @@ Starting Mixion Application...
 
 Database initialized: database/mixion.db
 ✓ MQTT client connected
-VLC initialized: assets/video/promo.mp4
+MPV initialized: assets/video/promo.mp4
 ```
 
 Then the UI appears and user can interact!

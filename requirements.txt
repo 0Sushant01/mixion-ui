@@ -4,6 +4,6 @@
 # MQTT Client - Communication with ESP32 hardware
 paho-mqtt>=1.6.1
 
-# VLC Python Bindings - Video playback for splash screen
-# Note: Requires VLC Media Player installed on system
-python-vlc>=3.0.16120
+# Python MPV - Video playback for splash screen
+# Note: Requires MPV player installed on system
+python-mpv>=1.0.1

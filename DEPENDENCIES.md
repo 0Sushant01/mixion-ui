@@ -110,27 +110,27 @@ These are in [requirements.txt](requirements.txt) and must be installed.
 pip install paho-mqtt
 ```
 
-### 2. **python-vlc**
-- **Version**: Latest (3.0.16120+)
+### 2. **python-mpv**
+- **Version**: Latest (1.0.1+)
 - **Purpose**: Video playback for splash screen
-- **Documentation**: https://pypi.org/project/python-vlc/
+- **Documentation**: https://pypi.org/project/python-mpv/
 - **Usage in Project**:
   - Play promotional video on splash screen
-  - Handle video events (play, pause, end)
+  - Looping video playback
   - Embedded media player widget
 - **Files**: `src/screens/splash_screen.py`
 - **Key Methods**:
-  - `vlc.Instance()` - Create VLC instance
-  - `media_new()` - Load media file
-  - `media_player_new()` - Create player
-  - `play()` - Start playback
+  - `mpv.MPV()` - Create MPV instance
+  - `play()` - Load and play media file
+  - `terminate()` - Stop playback
+  - `pause` - Pause/resume control
 
 **Installation**:
 ```bash
-pip install python-vlc
+pip install python-mpv
 ```
 
-**System Requirement**: Requires **VLC Media Player** installed on the system.
+**System Requirement**: Requires **MPV Media Player** installed on the system.
 
 ---
 
@@ -145,22 +145,22 @@ pip install python-vlc
 - **Python 3.9 or higher**
 - Check version: `python --version`
 
-### VLC Media Player
-Required for video playback (used by python-vlc).
+### MPV Media Player
+Required for video playback (used by python-mpv).
 
 #### Linux (Debian/Ubuntu/Raspberry Pi):
 ```bash
 sudo apt-get update
-sudo apt-get install vlc
+sudo apt-get install mpv
 ```
 
 #### macOS (Homebrew):
 ```bash
-brew install vlc
+brew install mpv
 ```
 
 #### Windows:
-Download from: https://www.videolan.org/vlc/
+Download from: https://mpv.io/installation/
 
 ### MQTT Broker
 Required for ESP32 communication.
@@ -212,9 +212,9 @@ pip install -r requirements.txt
 
 This installs:
 - `paho-mqtt` - MQTT client library
-- `python-vlc` - VLC bindings for Python
+- `python-mpv` - MPV bindings for Python
 
-### 4. Install VLC Media Player
+### 4. Install MPV Media Player
 See [System Requirements](#system-requirements) above.
 
 ### 5. Configure MQTT Broker
@@ -243,7 +243,7 @@ python test.py
 | **UI Framework** | Tkinter | Built-in | GUI, screens, widgets |
 | **Database** | SQLite3 | Built-in | Data persistence, auto-migration |
 | **Communication** | paho-mqtt | External | ESP32 MQTT communication |
-| **Media Player** | python-vlc | External | Splash screen video playback |
+| **Media Player** | python-mpv | External | Splash screen video playback |
 | **Concurrency** | Threading | Built-in | Parallel pump execution |
 | **Data Format** | JSON | Built-in | MQTT message serialization |
 | **Unique IDs** | UUID | Built-in | Message tracking |
@@ -293,7 +293,7 @@ python test.py
 
 ```
 paho-mqtt    → MQTT protocol client
-python-vlc   → Python bindings for VLC media player
+python-mpv   → Python bindings for MPV media player
 ```
 
 ### What Comes with Python
@@ -313,7 +313,7 @@ pathlib      → Path manipulation
 ### What Needs System Installation
 
 ```
-VLC Media Player     → Video codec backend
+MPV Media Player     → Video codec backend
 MQTT Broker          → Message broker (Mosquitto)
 ESP32 Firmware       → Hardware communication
 ```
@@ -357,7 +357,7 @@ The simulator uses:
 - **Tkinter**: https://docs.python.org/3/library/tkinter.html
 - **SQLite3**: https://docs.python.org/3/library/sqlite3.html
 - **paho-mqtt**: https://pypi.org/project/paho-mqtt/
-- **python-vlc**: https://pypi.org/project/python-vlc/
+- **python-mpv**: https://pypi.org/project/python-mpv/
 - **MQTT Protocol**: https://mqtt.org/
 - **Mosquitto Broker**: https://mosquitto.org/
 
@@ -370,10 +370,10 @@ The simulator uses:
 pip install paho-mqtt
 ```
 
-### ImportError: No module named 'vlc'
+### ImportError: No module named 'mpv'
 ```bash
-pip install python-vlc
-# Also ensure VLC Media Player is installed on your system
+pip install python-mpv
+# Also ensure MPV Media Player is installed on your system
 ```
 
 ### Tkinter not available
@@ -399,7 +399,7 @@ brew install python-tk
 
 This project uses the following open-source libraries:
 - **paho-mqtt**: Eclipse Public License 2.0
-- **python-vlc**: LGPL-2.1
+- **python-mpv**: LGPL-2.1+
 - **Tkinter**: Python Software Foundation License
 - **SQLite**: Public Domain
 

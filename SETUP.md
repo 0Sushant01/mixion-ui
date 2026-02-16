@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 This installs:
 - `paho-mqtt>=1.6.1` - MQTT client for ESP32 communication
-- `python-vlc>=3.0.16120` - Video playback library
+- `python-mpv>=1.0.1` - Video playback library
 
 > 📖 **For complete framework and technology details**, see [DEPENDENCIES.md](DEPENDENCIES.md)
 
@@ -239,8 +239,8 @@ See **[TESTING_WITH_SIMULATOR.md](TESTING_WITH_SIMULATOR.md)** for detailed test
 - Test connection: `mosquitto_pub -h <broker_ip> -t test -m "hello"`
 
 ### Video Not Playing
-- Install VLC media player
-- Install python-vlc: `pip install python-vlc`
+- Install MPV media player
+- Install python-mpv: `pip install python-mpv`
 - Check video path in [config.py](config.py)
 
 ### Database Errors
@@ -257,7 +257,7 @@ The application prints status information:
 ```
 Database initialized: database/mixion.db
 ✓ MQTT client connected
-VLC initialized: assets/video/promo.mp4
+MPV initialized: assets/video/promo.mp4
 Selected drink: Mojito (ID: 1)
 Published dispense command: {...}
 ```

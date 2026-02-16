@@ -166,7 +166,7 @@ The ESP32 receives this and runs multiple pumps in parallel for the specified du
 ## 💻 Requirements
 
 - **Python 3.9+**
-- **VLC Media Player** (for video playback)
+- **MPV Media Player** (for video playback)
 - **MQTT Broker** (Mosquitto recommended)
 - **ESP32** (for hardware control)
 
@@ -174,7 +174,7 @@ The ESP32 receives this and runs multiple pumps in parallel for the specified du
 
 ```
 paho-mqtt>=1.6.1      # MQTT client for ESP32 communication
-python-vlc>=3.0.16120 # Video playback (requires VLC installed)
+python-mpv>=1.0.1     # Video playback (requires MPV installed)
 ```
 
 Installed automatically with: `pip install -r requirements.txt`
@@ -218,19 +218,19 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2) Install VLC media player
+### 2) Install MPV media player
 
-**Windows:** Download from https://www.videolan.org/vlc/
+**Windows:** Download from https://mpv.io/installation/
 
 **Linux/Raspberry Pi:**
 ```bash
 sudo apt-get update
-sudo apt-get install vlc
+sudo apt-get install mpv
 ```
 
 **macOS:**
 ```bash
-brew install vlc
+brew install mpv
 ```
 
 ### 3) Install Python dependencies
@@ -446,13 +446,13 @@ Measure actual pump output and update in admin panel:
 ### Video Not Playing
 
 ```
-Warning: python-vlc not installed
+Warning: python-mpv not installed
 ```
 
 **Solution:**
-1. Install VLC media player
-2. Reinstall: `pip install --upgrade python-vlc`
-3. Verify: `python -c "import vlc; print('OK')"`
+1. Install MPV media player
+2. Reinstall: `pip install --upgrade python-mpv`
+3. Verify: `python -c "import mpv; print('OK')"`
 
 ### Database Locked
 

@@ -230,12 +230,12 @@ def test_imports():
             print_result(description, False, f"{module} - {str(e)}")
             all_good = False
     
-    # VLC is optional
+    # MPV is optional
     try:
-        import vlc
-        print_result("VLC (optional)", True, "Video playback available")
+        import mpv
+        print_result("MPV (optional)", True, "Video playback available")
     except ImportError:
-        print_result("VLC (optional)", False, "Install VLC and python-vlc for video playback")
+        print_result("MPV (optional)", False, "Install MPV and python-mpv for video playback")
     
     return all_good
 

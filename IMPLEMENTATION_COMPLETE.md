@@ -47,7 +47,7 @@ Your Mixion drink machine software is **production-ready** and complete. Here's 
 ### 🖥️ User Interface Screens
 
 #### Splash Screen ([src/screens/splash_screen.py](src/screens/splash_screen.py))
-- ✅ Video playback with VLC
+- ✅ Video playback with MPV
 - ✅ Audio support
 - ✅ Click/touch to continue
 - ✅ Looping video
