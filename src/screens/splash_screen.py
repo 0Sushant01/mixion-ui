@@ -36,24 +36,24 @@ class SplashScreen(tk.Frame):
         else:
             self._show_error_message()
         
-        # Create TRANSPARENT overlay frame that covers ENTIRE screen
-        # This frame sits ON TOP of the video and captures all touch/click events
-        self.touch_overlay = tk.Frame(self, bg="black")
-        self.touch_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+        # Create clickable bar at bottom (doesn't cover video)
+        # This bar is LARGE and easy to tap
+        self.touch_bar = tk.Frame(self, bg="#000000", cursor="hand2")
+        self.touch_bar.place(relx=0, rely=0.8, relwidth=1, relheight=0.2)
         
-        # Make overlay semi-transparent by using a label with text
+        # Add instruction text in the bar
         self.instruction_label = tk.Label(
-            self.touch_overlay,
-            text="TAP ANYWHERE TO CONTINUE",
-            font=("Arial", 20, "bold"),
+            self.touch_bar,
+            text="⬆  TAP HERE TO CONTINUE  ⬆",
+            font=("Arial", 22, "bold"),
             fg="white",
-            bg="black",
+            bg="#000000",
             cursor="hand2"
         )
-        self.instruction_label.pack(side="bottom", pady=50)
+        self.instruction_label.pack(expand=True)
         
-        # Bind click events to ENTIRE overlay frame
-        self.touch_overlay.bind("<Button-1>", self.on_touch)
+        # Bind click events to bar and label
+        self.touch_bar.bind("<Button-1>", self.on_touch)
         self.instruction_label.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
         
@@ -113,7 +113,7 @@ class SplashScreen(tk.Frame):
             fill="white",
             justify="center"
         )
-        # Overlay is still clickable even without video - entire screen works!
+        # Touch bar at bottom is still clickable even without video
 
     def start(self):
         """Called when screen is shown"""
@@ -124,8 +124,8 @@ class SplashScreen(tk.Frame):
         
         print(f"Canvas size: {width}x{height}")
         
-        # Make sure overlay is on top and captures all events
-        self.touch_overlay.lift()
+        # Make sure touch bar is on top and visible
+        self.touch_bar.lift()
         
         if not self.player:
             return
@@ -135,6 +135,7 @@ class SplashScreen(tk.Frame):
             if hasattr(self.player, 'pause'):
                 self.player.pause = False
             print("Video playback started/resumed")
+            print("Video visible in top 80%, clickable bar at bottom 20%")
             
             # Animate the instruction label to draw attention
             self._animate_label()
@@ -146,11 +147,11 @@ class SplashScreen(tk.Frame):
         try:
             current_fg = self.instruction_label.cget("fg")
             # Toggle between white and light gray
-            new_fg = "#CCCCCC" if current_fg == "white" else "white"
+            new_fg = "#AAAAAA" if current_fg == "white" else "white"
             self.instruction_label.config(fg=new_fg)
             
-            # Repeat animation every 600ms
-            self.after(600, self._animate_label)
+            # Repeat animation every 700ms
+            self.after(700, self._animate_label)
         except:
             pass
 
