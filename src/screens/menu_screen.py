@@ -53,7 +53,7 @@ class MenuScreen(tk.Frame):
         self.status_dot = tk.Label(
             status_frame,
             text="●",
-            fg="#ef4444",
+            fg="#f59e0b",
             bg="#0b0f14",
             font=("Arial", 14, "bold"),
         )
@@ -61,8 +61,8 @@ class MenuScreen(tk.Frame):
 
         self.status_text = tk.Label(
             status_frame,
-            text="OFFLINE",
-            fg="#ef4444",
+            text="CONNECTING",
+            fg="#f59e0b",
             bg="#0b0f14",
             font=("Arial", 12, "bold"),
         )
@@ -292,15 +292,22 @@ class MenuScreen(tk.Frame):
         return mqtt_client.is_device_online(config.DEVICE_STATUS_TIMEOUT_SEC)
 
     def _update_device_status(self):
-        online = self._is_device_online()
-        if online:
+        mqtt_client = getattr(self.controller, "mqtt_client", None)
+        status = "connecting"
+        if mqtt_client:
+            status = mqtt_client.get_device_status(config.DEVICE_STATUS_TIMEOUT_SEC)
+
+        if status == "online":
             self.status_dot.config(fg="#22c55e")
             self.status_text.config(text="ONLINE", fg="#22c55e")
-        else:
+        elif status == "offline":
             self.status_dot.config(fg="#ef4444")
             self.status_text.config(text="OFFLINE", fg="#ef4444")
+        else:
+            self.status_dot.config(fg="#f59e0b")
+            self.status_text.config(text="CONNECTING", fg="#f59e0b")
 
-        state = tk.NORMAL if online else tk.DISABLED
+        state = tk.NORMAL if status == "online" else tk.DISABLED
         for button in self._drink_buttons:
             button.config(state=state)
 

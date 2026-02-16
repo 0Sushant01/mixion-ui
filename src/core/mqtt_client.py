@@ -156,3 +156,13 @@ class MQTTClient:
         if self.last_alive_at <= 0:
             return False
         return (time.time() - self.last_alive_at) <= timeout_sec
+
+    def get_device_status(self, timeout_sec):
+        """Return device status string: connecting, online, or offline"""
+        if not self.connected:
+            return "connecting"
+        if self.last_alive_at <= 0:
+            return "connecting"
+        if (time.time() - self.last_alive_at) <= timeout_sec:
+            return "online"
+        return "offline"
