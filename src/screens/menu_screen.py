@@ -11,6 +11,7 @@ class MenuScreen(tk.Frame):
         self.database = controller.database
         self._drink_buttons = []
         self._status_poll_id = None
+        self._status_request_id = None
 
         header = tk.Frame(self, bg="#0b0f14")
         header.pack(fill="x", padx=30, pady=(20, 10))
@@ -82,6 +83,7 @@ class MenuScreen(tk.Frame):
         self.refresh()
 
         self._schedule_status_poll()
+        self._schedule_status_request()
 
     def refresh(self):
         for widget in self.grid_frame.winfo_children():
@@ -250,6 +252,12 @@ class MenuScreen(tk.Frame):
         self.controller.show_screen("custom")
 
     def _on_exit(self):
+        if self._status_poll_id:
+            self.after_cancel(self._status_poll_id)
+            self._status_poll_id = None
+        if self._status_request_id:
+            self.after_cancel(self._status_request_id)
+            self._status_request_id = None
         self.controller.quit()
 
     def _send_dispense(self, action):
@@ -272,6 +280,11 @@ class MenuScreen(tk.Frame):
             self.after_cancel(self._status_poll_id)
         self._update_device_status()
 
+    def _schedule_status_request(self):
+        if self._status_request_id:
+            self.after_cancel(self._status_request_id)
+        self._send_status_request()
+
     def _is_device_online(self):
         mqtt_client = getattr(self.controller, "mqtt_client", None)
         if not mqtt_client:
@@ -292,3 +305,18 @@ class MenuScreen(tk.Frame):
             button.config(state=state)
 
         self._status_poll_id = self.after(1000, self._update_device_status)
+
+    def _send_status_request(self):
+        online = self._is_device_online()
+        if online:
+            return
+
+        mqtt_client = getattr(self.controller, "mqtt_client", None)
+        if mqtt_client:
+            mqtt_client.publish_status_request(
+                config.STATUS_REQUEST_TOPIC,
+                config.STATUS_REQUEST_PAYLOAD
+            )
+
+        interval_ms = int(config.STATUS_REQUEST_INTERVAL_SEC * 1000)
+        self._status_request_id = self.after(interval_ms, self._send_status_request)

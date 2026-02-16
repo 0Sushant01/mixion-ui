@@ -98,6 +98,20 @@ class MQTTClient:
         if not self.connected:
             print("Not connected to MQTT broker")
             return False, None
+
+    def publish_status_request(self, topic, payload):
+        """Publish a status request to ESP32"""
+        if not self.connected:
+            return False
+
+        try:
+            with self.lock:
+                result = self.client.publish(topic, json.dumps(payload), qos=1)
+                result.wait_for_publish()
+            return True
+        except Exception as e:
+            print(f"Failed to publish status request: {e}")
+            return False
         
         msg_id = str(uuid.uuid4())
         
