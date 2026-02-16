@@ -4,7 +4,7 @@ MQTT and application settings
 """
 
 # MQTT Configuration
-MQTT_BROKER = "192.168.1.100"  # Update with your broker IP
+MQTT_BROKER = "192.168.0.67"  # Update with your broker IP
 MQTT_PORT = 1883
 DEVICE_ID = "esp32_1"
 
