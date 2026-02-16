@@ -23,10 +23,24 @@ class SplashScreen(tk.Frame):
         self.player = None
         self.instance = None
 
+        # Video container frame
         self.video_frame = tk.Frame(self, bg="black")
         self.video_frame.pack(fill="both", expand=True)
 
-        self.video_frame.bind("<Button-1>", self.on_touch)
+        # Add clickable overlay at the bottom (MPV blocks normal event bindings)
+        self.tap_label = tk.Label(
+            self,
+            text="⬆ TAP ANYWHERE TO CONTINUE ⬆",
+            font=("Arial", 16, "bold"),
+            fg="white",
+            bg="black",
+            cursor="hand2",
+            pady=20
+        )
+        self.tap_label.place(relx=0.5, rely=0.95, anchor="s")
+        
+        # Bind click events to label and frame
+        self.tap_label.bind("<Button-1>", self.on_touch)
         self.bind("<Button-1>", self.on_touch)
 
         if MPV_AVAILABLE:
@@ -80,8 +94,24 @@ class SplashScreen(tk.Frame):
             if hasattr(self.player, 'pause'):
                 self.player.pause = False
             print("Video playback started")
+            
+            # Animate the tap label to make it noticeable
+            self._animate_tap_label()
         except Exception as e:
             print(f"Error starting playback: {e}")
+    
+    def _animate_tap_label(self):
+        """Pulse animation for tap label"""
+        try:
+            current_color = self.tap_label.cget("fg")
+            if current_color == "white":
+                self.tap_label.config(fg="#CCCCCC")
+            else:
+                self.tap_label.config(fg="white")
+            # Repeat animation every 500ms
+            self.after(500, self._animate_tap_label)
+        except:
+            pass
 
     def stop(self):
         if not self.player:
@@ -94,4 +124,6 @@ class SplashScreen(tk.Frame):
             print(f"Error stopping playback: {e}")
 
     def on_touch(self, _event=None):
+        print("Splash screen touched - navigating to menu")
+        self.stop()
         self.controller.show_screen("menu")
