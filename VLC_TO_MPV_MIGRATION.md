@@ -132,6 +132,8 @@ Updated all references from VLC to MPV in:
 
 ### 1. Install MPV Media Player
 
+⚠️ **CRITICAL**: Install system MPV BEFORE python-mpv package!
+
 **Windows**:
 ```powershell
 # Download from https://mpv.io/installation/
@@ -142,7 +144,7 @@ choco install mpv
 **Linux (Raspberry Pi/Ubuntu)**:
 ```bash
 sudo apt-get update
-sudo apt-get install mpv
+sudo apt-get install mpv libmpv-dev
 ```
 
 **macOS**:
@@ -291,6 +293,22 @@ player.terminate()
 ### None Currently
 
 Migration is complete and tested. No known issues with MPV implementation.
+
+### Common Installation Issue
+
+**Error**: `OSError: Cannot find libmpv`
+
+**Solution**: Install system MPV library before python-mpv:
+
+```bash
+# Raspberry Pi/Ubuntu
+sudo apt-get install mpv libmpv-dev
+pip install --upgrade python-mpv
+
+# macOS
+brew install mpv
+pip install --upgrade python-mpv
+```
 
 ### If Problems Occur
 

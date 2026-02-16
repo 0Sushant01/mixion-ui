@@ -220,12 +220,14 @@ source venv/bin/activate
 
 ### 2) Install MPV media player
 
+⚠️ **Install MPV BEFORE running `pip install -r requirements.txt`**
+
 **Windows:** Download from https://mpv.io/installation/
 
-**Linux/Raspberry Pi:**
+**Linux (Raspberry Pi/Ubuntu):**
 ```bash
 sudo apt-get update
-sudo apt-get install mpv
+sudo apt-get install mpv libmpv-dev
 ```
 
 **macOS:**

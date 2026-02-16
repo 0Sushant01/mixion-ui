@@ -5,5 +5,8 @@
 paho-mqtt>=1.6.1
 
 # Python MPV - Video playback for splash screen
-# Note: Requires MPV player installed on system
+# IMPORTANT: Install system MPV first!
+#   Raspberry Pi/Ubuntu: sudo apt-get install mpv libmpv-dev
+#   macOS: brew install mpv
+#   Windows: Download from https://mpv.io/installation/
 python-mpv>=1.0.1

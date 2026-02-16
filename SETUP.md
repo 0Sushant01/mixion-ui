@@ -239,7 +239,10 @@ See **[TESTING_WITH_SIMULATOR.md](TESTING_WITH_SIMULATOR.md)** for detailed test
 - Test connection: `mosquitto_pub -h <broker_ip> -t test -m "hello"`
 
 ### Video Not Playing
-- Install MPV media player
+- Install MPV media player with development libraries
+- **Raspberry Pi/Ubuntu**: `sudo apt-get install mpv libmpv-dev`
+- **macOS**: `brew install mpv`
+- **Windows**: Download from https://mpv.io/installation/
 - Install python-mpv: `pip install python-mpv`
 - Check video path in [config.py](config.py)
 

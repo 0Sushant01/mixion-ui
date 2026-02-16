@@ -148,10 +148,12 @@ pip install python-mpv
 ### MPV Media Player
 Required for video playback (used by python-mpv).
 
+⚠️ **IMPORTANT**: Install MPV **BEFORE** installing python-mpv package!
+
 #### Linux (Debian/Ubuntu/Raspberry Pi):
 ```bash
 sudo apt-get update
-sudo apt-get install mpv
+sudo apt-get install mpv libmpv-dev
 ```
 
 #### macOS (Homebrew):
@@ -205,7 +207,25 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 ```
 
-### 3. Install Python Dependencies
+### 3. Install MPV System Package (REQUIRED FIRST!)
+
+⚠️ **Install MPV BEFORE running pip install**
+
+**Raspberry Pi / Ubuntu / Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install mpv libmpv-dev
+```
+
+**macOS:**
+```bash
+brew install mpv
+```
+
+**Windows:**
+Download and install from https://mpv.io/installation/
+
+### 4. Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
@@ -213,8 +233,6 @@ pip install -r requirements.txt
 This installs:
 - `paho-mqtt` - MQTT client library
 - `python-mpv` - MPV bindings for Python
-
-### 4. Install MPV Media Player
 See [System Requirements](#system-requirements) above.
 
 ### 5. Configure MQTT Broker
@@ -375,6 +393,28 @@ pip install paho-mqtt
 pip install python-mpv
 # Also ensure MPV Media Player is installed on your system
 ```
+
+### OSError: Cannot find libmpv
+
+This means the system MPV library is missing.
+
+**Raspberry Pi / Ubuntu:**
+```bash
+sudo apt-get install mpv libmpv-dev
+pip install --upgrade python-mpv
+```
+
+**macOS:**
+```bash
+brew install mpv
+pip install --upgrade python-mpv
+```
+
+**Windows:**
+1. Download MPV from https://mpv.io/installation/
+2. Extract to C:\mpv
+3. Add C:\mpv to PATH
+4. Reinstall: `pip install --upgrade python-mpv`
 
 ### Tkinter not available
 **Linux**:

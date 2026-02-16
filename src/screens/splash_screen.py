@@ -5,9 +5,14 @@ import os
 try:
     import mpv
     MPV_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError) as e:
     MPV_AVAILABLE = False
-    print("Warning: python-mpv not installed. Video playback disabled.")
+    if isinstance(e, OSError):
+        print("Warning: libmpv not found. Install MPV media player on your system.")
+        print("  Raspberry Pi/Ubuntu: sudo apt-get install mpv libmpv-dev")
+        print("  Then reinstall: pip install python-mpv")
+    else:
+        print("Warning: python-mpv not installed. Video playback disabled.")
 
 
 class SplashScreen(tk.Frame):

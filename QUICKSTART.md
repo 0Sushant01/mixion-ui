@@ -14,7 +14,20 @@ This installs:
 
 ### 2️⃣ Install MPV Media Player
 
-Download and install MPV: https://mpv.io/installation/
+⚠️ **IMPORTANT**: Install MPV system package FIRST (before pip install)!
+
+**Raspberry Pi / Ubuntu:**
+```bash
+sudo apt-get update
+sudo apt-get install mpv libmpv-dev
+```
+
+**Windows:** Download and install MPV: https://mpv.io/installation/
+
+**macOS:**
+```bash
+brew install mpv
+```
 
 Required for video playback on splash screen.
 
