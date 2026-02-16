@@ -113,7 +113,6 @@ def play_splash_video(video_path):
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".conf") as temp_file:
             temp_file.write("MOUSE_BTN0 quit\n")
             temp_file.write("MOUSE_BTN0_DBL quit\n")
-            temp_file.write("TOUCH quit\n")
             temp_input_conf = temp_file.name
 
         # Run MPV with runtime input configuration
@@ -125,7 +124,10 @@ def play_splash_video(video_path):
             "--loop=inf",
             "--no-osd-bar",
             "--quiet",
-            "--hwdec=auto",
+            "--vo=gpu",
+            "--gpu-api=opengl",
+            "--opengl-es=yes",
+            "--hwdec=auto-safe",
             "--framedrop=vo",
             "--no-audio",
             "--input-default-bindings=no",
