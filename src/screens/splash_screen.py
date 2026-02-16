@@ -125,6 +125,9 @@ def play_splash_video(video_path):
             "--loop=inf",
             "--no-osd-bar",
             "--quiet",
+            "--hwdec=auto",
+            "--framedrop=vo",
+            "--no-audio",
             "--input-default-bindings=no",
             f"--input-conf={temp_input_conf}",
             video_abs_path
