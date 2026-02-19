@@ -125,13 +125,17 @@ class PourEngine:
         
         Args:
             amount_ml: Amount to dispense in milliliters
-            flow_rate: Flow rate in ml per second
+            flow_rate: Flow rate in ml per minute (ml/min)
         
         Returns:
             float: Duration in seconds (rounded to 2 decimal places)
+        
+        Formula: duration_sec = (amount_ml / flow_rate_ml_min) * 60
         """
         if flow_rate <= 0:
             raise ValueError("Flow rate must be greater than 0")
         
-        duration = amount_ml / flow_rate
+        # Convert flow_rate from ml/min to ml/sec by dividing by 60
+        # Then calculate duration: amount_ml / (flow_rate / 60) = (amount_ml * 60) / flow_rate
+        duration = (amount_ml * 60) / flow_rate
         return round(duration, 2)

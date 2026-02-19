@@ -41,7 +41,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 position INTEGER NOT NULL UNIQUE,
-                flow_rate REAL NOT NULL DEFAULT 10.0,
+                flow_rate REAL NOT NULL DEFAULT 600.0,
                 enabled INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -99,7 +99,7 @@ class Database:
             print("  → Migrating: Adding flow_rate column to bottles table...")
             cursor.execute("""
                 ALTER TABLE bottles 
-                ADD COLUMN flow_rate REAL NOT NULL DEFAULT 10.0
+                ADD COLUMN flow_rate REAL NOT NULL DEFAULT 600.0
             """)
             print("  ✓ Migration complete: flow_rate column added")
 
@@ -111,9 +111,9 @@ class Database:
 
         if bottle_count == 0:
             default_bottles = [
-                ("Bottle A", 1, 10.0),
-                ("Bottle B", 2, 10.0),
-                ("Bottle C", 3, 10.0),
+                ("Bottle A", 1, 600.0),
+                ("Bottle B", 2, 600.0),
+                ("Bottle C", 3, 600.0),
             ]
             cursor.executemany(
                 "INSERT INTO bottles (name, position, flow_rate) VALUES (?, ?, ?)",
@@ -155,7 +155,7 @@ class Database:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def add_bottle(self, name, position, flow_rate=10.0):
+    def add_bottle(self, name, position, flow_rate=600.0):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
