@@ -58,24 +58,9 @@ class ProcessingScreen(ctk.CTkFrame):
         )
         self.back_btn.place(x=30, y=30)
 
-        # Bottom Menu Button (Always Visible)
-        self.bottom_menu_btn = ctk.CTkButton(
-            self,
-            text="BACK TO MENU",
-            command=self._on_return,
-            fg_color="#2563EB",
-            text_color="white",
-            hover_color="#1D4ED8",
-            font=("Roboto", 14, "bold"),
-            width=150,
-            height=45,
-            corner_radius=22
-        )
-        self.bottom_menu_btn.place(relx=0.5, rely=0.95, anchor="center")
-
         # Log area (Visible Debug Console)
         self.log_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.log_frame.pack(side="bottom", fill="both", expand=True, padx=40, pady=(0, 20))
+        self.log_frame.pack(side="bottom", fill="both", expand=True, padx=40, pady=(0, 10))
         
         ctk.CTkLabel(
             self.log_frame, 
@@ -96,6 +81,23 @@ class ProcessingScreen(ctk.CTkFrame):
         )
         self.log_text.pack(fill="both", expand=True)
         self.log_text.configure(state="disabled")
+
+        # Bottom Menu Button Footer
+        footer = ctk.CTkFrame(self, fg_color="white", height=70, corner_radius=0)
+        footer.pack(side="bottom", fill="x", padx=0, pady=0)
+        
+        ctk.CTkButton(
+            footer,
+            text="BACK TO MENU",
+            command=self._on_return,
+            fg_color="#2563EB",
+            text_color="white",
+            hover_color="#1D4ED8",
+            font=("Roboto", 16, "bold"),
+            width=200,
+            height=50,
+            corner_radius=25
+        ).pack(pady=10)
 
         # Return Button (Initially Hidden)
         self.return_button = ctk.CTkButton(
