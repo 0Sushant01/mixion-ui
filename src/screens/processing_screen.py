@@ -43,6 +43,36 @@ class ProcessingScreen(ctk.CTkFrame):
         )
         self.status_label.pack(pady=(20, 0))
 
+        # Back Button (Always Visible)
+        self.back_btn = ctk.CTkButton(
+            self,
+            text="< MENU",
+            command=self._on_return,
+            fg_color="#F1F5F9",
+            text_color="#64748B",
+            hover_color="#E2E8F0",
+            font=("Roboto", 14, "bold"),
+            width=100,
+            height=40,
+            corner_radius=20
+        )
+        self.back_btn.place(x=30, y=30)
+
+        # Bottom Menu Button (Always Visible)
+        self.bottom_menu_btn = ctk.CTkButton(
+            self,
+            text="BACK TO MENU",
+            command=self._on_return,
+            fg_color="#2563EB",
+            text_color="white",
+            hover_color="#1D4ED8",
+            font=("Roboto", 14, "bold"),
+            width=150,
+            height=45,
+            corner_radius=22
+        )
+        self.bottom_menu_btn.place(relx=0.5, rely=0.95, anchor="center")
+
         # Log area (Visible Debug Console)
         self.log_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.log_frame.pack(side="bottom", fill="both", expand=True, padx=40, pady=(0, 20))
