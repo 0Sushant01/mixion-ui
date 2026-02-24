@@ -9,6 +9,8 @@ from src.screens.splash_screen import play_splash_video
 
 
 class MenuScreen(ctk.CTkFrame):
+    _image_cache = {}  # Class-level cache to persist across instances
+
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F8FAFC", corner_radius=0)
         self.controller = controller
@@ -16,7 +18,6 @@ class MenuScreen(ctk.CTkFrame):
         self._drink_buttons = []
         self._status_poll_id = None
         self._status_request_id = None
-        self._images = [] 
 
         # --- Constants for Kiosk UI ---
         self.HEADER_HEIGHT = 100
@@ -142,7 +143,7 @@ class MenuScreen(ctk.CTkFrame):
         for widget in self.content.winfo_children():
             widget.destroy()
         self._drink_buttons.clear()
-        self._images.clear()
+        # No need to clear cache here
 
         drinks = self.database.get_active_drinks()
         
@@ -186,7 +187,6 @@ class MenuScreen(ctk.CTkFrame):
         drink_image = self._load_drink_image(drink["id"]) if not is_custom else None
         
         if drink_image:
-            self._images.append(drink_image)
             # Image Container for centering/cropping visuals
             img_container = ctk.CTkLabel(
                 card,
@@ -285,7 +285,9 @@ class MenuScreen(ctk.CTkFrame):
         self._drink_buttons.append(btn)
 
     def _load_drink_image(self, drink_id):
-        # ... Reuse logic ...
+        if drink_id in self._image_cache:
+            return self._image_cache[drink_id]
+
         if not hasattr(config, 'DRINK_IMAGES_DIR'): return None
         extensions = ['.png', '.jpg', '.jpeg']
         for ext in extensions:
@@ -294,13 +296,11 @@ class MenuScreen(ctk.CTkFrame):
                 try:
                     pil_img = Image.open(path)
                     # Kiosk resizing: larger!
-                    target_w, target_h = 320, 240 # roughly 4:3
-                    ratio = min(target_w/pil_img.width, target_h/pil_img.height)
-                    # Cover or Contain? Let's contain within the box but make it look full
-                    # Actually standard CTkImage will scale.
-                    return ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(320, 240))
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(320, 240))
+                    self._image_cache[drink_id] = ctk_img
+                    return ctk_img
                 except Exception as e:
-                    print(f"Error: {e}")
+                    print(f"Error loading image {drink_id}: {e}")
         return None
 
     # --- Event Handlers (Logic remains mostly same) ---

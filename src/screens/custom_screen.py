@@ -1,12 +1,10 @@
 import customtkinter as ctk
 import threading
-from src.core.database import init_database
-
 class CustomMixScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="white", corner_radius=0)
         self.controller = controller
-        self.database = init_database()
+        self.database = controller.database
         self.rows = []
 
         # Constants

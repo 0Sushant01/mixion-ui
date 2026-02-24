@@ -36,9 +36,6 @@ class MQTTClient:
             self.client.connect(self.broker, self.port, keepalive=60)
             self.client.loop_start()
             
-            # Wait a moment for connection
-            time.sleep(0.5)
-            
             return True
         except Exception as e:
             print(f"Failed to connect to MQTT broker: {e}")

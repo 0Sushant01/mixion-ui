@@ -79,46 +79,35 @@ class SplashScreen(tk.Frame):
         self.controller.show_screen("menu")
 
 
-def play_splash_video(video_path):
+def play_splash_video(video_path, blocking=True):
     """
-    Play splash video in fullscreen using MPV with runtime touch-to-exit.
-    This runs BEFORE the tkinter app starts.
-
-    Uses runtime MPV configuration (no system files modified):
-    - Touch/click anywhere exits the video
-    - Behavior applies ONLY to splash playback
-    - Other MPV usage remains unaffected
+    Play splash video in fullscreen using MPV.
+    
+    Args:
+        video_path: Path to video file
+        blocking: If True, waits for video to exit. If False, returns the process handle.
     """
     video_abs_path = os.path.abspath(video_path)
     
     if not os.path.exists(video_abs_path):
         print(f"Video file not found: {video_abs_path}")
-        return
+        return None
     
-    # Check if mpv is available
     if not shutil.which("mpv"):
         print("MPV command-line tool not found")
-        print("Install with: sudo apt-get install mpv")
-        return
+        return None
     
     print(f"Playing splash video: {video_abs_path}")
-    print("Touch anywhere to continue...")
 
     temp_input_conf = None
     try:
-        # Create a temporary input.conf that only applies to this MPV run.
-        # Use a temp file instead of --input-cmdlist (which prints command list and exits).
         import tempfile
-
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".conf") as temp_file:
             temp_file.write("MOUSE_BTN0 quit\n")
             temp_file.write("MOUSE_BTN0_DBL quit\n")
             temp_input_conf = temp_file.name
 
-        # Run MPV with runtime input configuration
-        # --input-default-bindings=no: Disable all default bindings
-        # --input-conf=<temp>: Use only our temp file
-        subprocess.run([
+        cmd = [
             "mpv",
             "--fullscreen",
             "--loop=inf",
@@ -126,20 +115,25 @@ def play_splash_video(video_path):
             "--quiet",
             "--vo=gpu",
             "--gpu-api=opengl",
-            "--opengl-es=yes",
-            "--hwdec=auto-safe",
-            "--framedrop=vo",
             "--no-audio",
             "--input-default-bindings=no",
             f"--input-conf={temp_input_conf}",
             video_abs_path
-        ])
-        print("Video playback finished")
+        ]
+
+        if blocking:
+            subprocess.run(cmd)
+            if temp_input_conf and os.path.exists(temp_input_conf):
+                os.remove(temp_input_conf)
+            return None
+        else:
+            # Non-blocking: returns (process, temp_conf_path)
+            process = subprocess.Popen(cmd)
+            return process, temp_input_conf
+
     except Exception as e:
         print(f"Error playing video: {e}")
-    finally:
         if temp_input_conf and os.path.exists(temp_input_conf):
-            try:
-                os.remove(temp_input_conf)
-            except OSError:
-                pass
+            try: os.remove(temp_input_conf)
+            except: pass
+        return None
