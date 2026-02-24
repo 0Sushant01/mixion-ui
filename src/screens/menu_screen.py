@@ -65,6 +65,28 @@ class MenuScreen(ctk.CTkFrame):
         self._schedule_status_poll()
         self._schedule_status_request()
 
+        # --- Inactivity Timer (Idle Timeout) ---
+        self._idle_timer_id = None
+        self._idle_timeout_ms = 60000  # 60 seconds
+        self._reset_inactivity_timer()
+        
+        # Bind events to reset timer on interaction
+        self.bind("<Button-1>", lambda e: self._reset_inactivity_timer())
+        self.bind("<Key>", lambda e: self._reset_inactivity_timer())
+        # Also bind to the content area
+        self.content.bind("<Button-1>", lambda e: self._reset_inactivity_timer())
+
+    def _reset_inactivity_timer(self):
+        """Reset the 60s idle timer"""
+        if self._idle_timer_id:
+            self.after_cancel(self._idle_timer_id)
+        self._idle_timer_id = self.after(self._idle_timeout_ms, self._on_idle_timeout)
+
+    def _on_idle_timeout(self):
+        """Called when no activity for 60s"""
+        print("Menu idle timeout reached - returning to splash")
+        self._on_splash()
+
     def _build_header(self):
         self.header = ctk.CTkFrame(
             self, 
@@ -140,6 +162,7 @@ class MenuScreen(ctk.CTkFrame):
         self.exit_btn.pack(side="left")
 
     def refresh(self):
+        self._reset_inactivity_timer()
         for widget in self.content.winfo_children():
             widget.destroy()
         self._drink_buttons.clear()
@@ -314,16 +337,19 @@ class MenuScreen(ctk.CTkFrame):
              self._show_error("System Error", "Pour engine not initialized.")
              return
         
+        self._reset_inactivity_timer()
         self._send_dispense(lambda: self.controller.pour_engine.dispense_drink(drink['id']))
 
     def _on_custom(self):
         if not self._is_device_online():
             self._show_error("Machine Offline", "Please check device connection.")
             return
+        self._reset_inactivity_timer()
         self.controller.show_screen("custom")
 
     def _on_exit(self):
         # Cleanup
+        if self._idle_timer_id: self.after_cancel(self._idle_timer_id)
         if self._status_poll_id: self.after_cancel(self._status_poll_id)
         if self._status_request_id: self.after_cancel(self._status_request_id)
         self.controller.quit()
