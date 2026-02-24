@@ -9,6 +9,33 @@ ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
 
+def ensure_setup():
+    """Ensure dependencies are installed and database is migrated"""
+    print("Checking environment setup...")
+    import subprocess
+    import sys
+    
+    # 1. Check/Install dependencies
+    try:
+        import customtkinter
+        import paho.mqtt
+    except ImportError:
+        print("Missing dependencies. Installing from requirements.txt...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+            print("✓ Dependencies installed successfully")
+        except Exception as e:
+            print(f"⚠ Failed to install dependencies: {e}")
+
+    # 2. Initialize/Migrate Database
+    try:
+        from src.core.database import init_database
+        init_database()
+        print("✓ Database initialized and migrated")
+    except Exception as e:
+        print(f"⚠ Database initialization failed: {e}")
+
+
 def _resolve_video_path():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_dir, "assets", "video", "promo.mp4")
@@ -16,6 +43,7 @@ def _resolve_video_path():
 
 if __name__ == "__main__":
     import time
+    ensure_setup()
     
     video_path = _resolve_video_path()
     

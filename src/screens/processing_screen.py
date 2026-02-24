@@ -14,6 +14,7 @@ class ProcessingScreen(ctk.CTkFrame):
         self._timeout_id = None
         self._status_listener = None
         self._is_finished = False
+        self._auto_redirect_id = None
         
         # Center Content
         self.content = ctk.CTkFrame(self, fg_color="transparent")
@@ -102,15 +103,24 @@ class ProcessingScreen(ctk.CTkFrame):
         # Return Button (Initially Hidden)
         self.return_button = ctk.CTkButton(
             self.content,
-            text="RETURN TO MENU",
+            text="DONE",
             command=self._on_return,
-            fg_color="#2563EB",
-            hover_color="#1D4ED8",
-            font=("Roboto", 18, "bold"),
+            fg_color=config.COLOR_SUCCESS if hasattr(config, 'COLOR_SUCCESS') else "#10B981",
+            hover_color="#059669",
+            font=("Roboto", 20, "bold"),
             height=60,
-            width=200,
+            width=220,
             corner_radius=30
         )
+        
+        # Success Overlay Canvas (for animations)
+        self.overlay = tk.Canvas(
+            self,
+            bg="white",
+            highlightthickness=0,
+            borderwidth=0
+        )
+        # Keep hidden initially
         
         self.animation_running = False
         self.dot_count = 0
@@ -138,10 +148,50 @@ class ProcessingScreen(ctk.CTkFrame):
     def show_complete(self):
         self._is_finished = True
         self.stop_animation()
+        
+        # UI Updates
         self.message_label.configure(text="Drink Ready!", text_color="#10B981")
-        self.dots_label.configure(text="✓")
-        self.status_label.configure(text="Please enjoy your drink.")
+        self.dots_label.configure(text="✓", text_color="#10B981")
+        self.status_label.configure(text="Please enjoy your drink. Returning to menu soon...")
         self.return_button.pack(pady=(40, 0))
+        
+        # Trigger Success Animation
+        self._play_success_animation()
+        
+        # Auto-redirect after 3 seconds
+        self._auto_redirect_id = self.after(3500, self._on_return)
+
+    def _play_success_animation(self):
+        """Play a celebratory pulse animation"""
+        self.overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.overlay.lift()
+        self.overlay.delete("all")
+        
+        # Draw background burst or pulse? 
+        # Let's do a simple expanding circle pulse
+        cx = self.winfo_width() // 2
+        cy = self.winfo_height() // 2
+        
+        def pulse(radius, alpha):
+            if not self._is_finished or radius > 1000: 
+                self.overlay.place_forget()
+                return
+            
+            self.overlay.delete("pulse")
+            # Draw circle (simulating transparency with color blending since tk canvas has limited alpha)
+            # We'll use a few shades of green
+            colors = ["#D1FAE5", "#A7F3D0", "#6EE7B7", "#34D399", "#10B981"]
+            color_idx = min(int(radius / 200), len(colors)-1)
+            
+            self.overlay.create_oval(
+                cx - radius, cy - radius, 
+                cx + radius, cy + radius, 
+                fill="", outline=colors[color_idx], width=5, tags="pulse"
+            )
+            
+            self.after(20, lambda: pulse(radius + 25, alpha))
+
+        pulse(50, 255)
     
     def show_error(self, error_message):
         self._is_finished = True
@@ -163,8 +213,10 @@ class ProcessingScreen(ctk.CTkFrame):
         self.expected_relays.clear()
         self.completed_relays.clear()
         self._is_finished = False
-        self._clear_log()
-        self._stop_timeout()
+        if self._auto_redirect_id:
+            self.after_cancel(self._auto_redirect_id)
+            self._auto_redirect_id = None
+        self.overlay.place_forget()
         self._detach_listener()
     
     def _on_return(self):
