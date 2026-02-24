@@ -18,6 +18,10 @@ class MenuScreen(ctk.CTkFrame):
         self._drink_buttons = []
         self._status_poll_id = None
         self._status_request_id = None
+        
+        # --- Inactivity Timer (Idle Timeout) ---
+        self._idle_timer_id = None
+        self._idle_timeout_ms = 60000  # 60 seconds
 
         # --- Constants for Kiosk UI ---
         self.HEADER_HEIGHT = 100
@@ -65,9 +69,6 @@ class MenuScreen(ctk.CTkFrame):
         self._schedule_status_poll()
         self._schedule_status_request()
 
-        # --- Inactivity Timer (Idle Timeout) ---
-        self._idle_timer_id = None
-        self._idle_timeout_ms = 60000  # 60 seconds
         self._reset_inactivity_timer()
         
         # Bind events to reset timer on interaction
