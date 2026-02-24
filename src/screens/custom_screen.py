@@ -201,7 +201,7 @@ class CustomMixScreen(ctk.CTkFrame):
                     screen = self.controller.get_screen("processing")
                     if screen:
                         relays = [job["relay"] for job in payload.get("jobs", [])]
-                        screen.start_transaction(payload, msg_id, relays)
+                        screen.start_transaction(payload, msg_id, relays, drink_name="Custom Mix")
                 else:
                     self._show_error(message)
             self.after(0, finish)

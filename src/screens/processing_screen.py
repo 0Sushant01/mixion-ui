@@ -16,6 +16,8 @@ class ProcessingScreen(ctk.CTkFrame):
         self._status_listener = None
         self._is_finished = False
         self._auto_redirect_id = None
+        self.current_transaction_id = None
+        self._current_payload = None
         
         # --- Constants for Premium UI ---
         self.COLOR_BG = "#F8FAFC"
@@ -164,7 +166,7 @@ class ProcessingScreen(ctk.CTkFrame):
         
         # UI Updates
         self.message_label.configure(text="Perfect Pour!", text_color=self.COLOR_SUCCESS)
-        self.status_label.configure(text="Your drink is ready. Enoy!")
+        self.status_label.configure(text="Your drink is ready. Enjoy!")
         
         # Draw checkmark on canvas
         self.canvas.delete("all")
@@ -176,9 +178,12 @@ class ProcessingScreen(ctk.CTkFrame):
         
         self.done_btn.pack(pady=(20, 0))
         
-        # Auto-redirect
-        print("Order complete - redirecting to menu in 4 seconds")
+        # Auto-redirect after 4 seconds
         self._auto_redirect_id = self.after(4000, self._on_return)
+        
+        # Database Update
+        if self.current_transaction_id:
+            self.controller.database.update_transaction_status(self.current_transaction_id, "completed")
 
     def _draw_checkmark(self, cx, cy, size):
         # Draw green circle
@@ -214,6 +219,11 @@ class ProcessingScreen(ctk.CTkFrame):
         
         self.done_btn.configure(fg_color="#DC2626", hover_color="#B91C1C")
         self.done_btn.pack(pady=(20, 0))
+
+        # Database Update
+        if self.current_transaction_id:
+            self.controller.database.update_transaction_status(self.current_transaction_id, f"failed: {error_message}")
+            self.controller.database.add_transaction_log(self.current_transaction_id, "ERR", "DISPENSE_ERROR", error_message)
     
     def reset(self):
         self.message_label.configure(text="Preparing your drink", text_color=self.COLOR_TEXT)
@@ -237,6 +247,9 @@ class ProcessingScreen(ctk.CTkFrame):
         if self._auto_redirect_id:
             self.after_cancel(self._auto_redirect_id)
             self._auto_redirect_id = None
+        self.current_transaction_id = None
+        self._current_payload = None
+        # self.overlay.place_forget() # This line was in the diff but 'overlay' is not defined in this class.
         self.controller.show_screen("menu")
 
     def refresh(self):
@@ -244,13 +257,22 @@ class ProcessingScreen(ctk.CTkFrame):
         self.start_animation()
 
     # --- Communication Logic ---
-    def start_transaction(self, payload, msg_id, relays):
+    def start_transaction(self, payload, msg_id, relays, drink_name=None):
         self.reset()
         self.start_animation()
         self.current_msg_id = msg_id
+        self._current_payload = payload
         self.expected_relays = set(relays)
         self.completed_relays = set()
         
+        # Database Start
+        try:
+            name = drink_name or "Unknown Drink"
+            self.current_transaction_id = self.controller.database.start_transaction(name, msg_id)
+        except Exception as e:
+            print(f"Error starting DB transaction: {e}")
+            self.current_transaction_id = None
+
         self._log_event("TX", "DISPENSE_COMMAND", json.dumps(payload, indent=2))
         self._attach_listener()
         self._start_timeout()
@@ -266,6 +288,18 @@ class ProcessingScreen(ctk.CTkFrame):
         prefix = f"[{timestamp}] {direction} | {event_type}"
         full_msg = f"{prefix}\n{content}\n" + "-"*40
         self._append_log(full_msg)
+        
+        # Persistent DB Logging
+        if self.current_transaction_id:
+            try:
+                self.controller.database.add_transaction_log(
+                    self.current_transaction_id,
+                    direction,
+                    event_type,
+                    content
+                )
+            except Exception as e:
+                print(f"Failed to log to DB: {e}")
 
     def _append_log(self, text):
         self.log_text.configure(state="normal")
@@ -303,7 +337,29 @@ class ProcessingScreen(ctk.CTkFrame):
             return
             
         if relay is not None and status == "completed":
-            self.completed_relays.add(int(relay))
+            relay_int = int(relay)
+            self.completed_relays.add(relay_int)
+            
+            # Find amount dispensed for this bottle
+            amount = 0
+            if self._current_payload:
+                for job in self._current_payload.get("jobs", []):
+                    if job.get("relay") == relay_int:
+                        amount = job.get("amount_ml", 0)
+                        break
+            
+            # DB Logging: Record bottle completion
+            if self.current_transaction_id:
+                try:
+                    self.controller.database.add_transaction_item(
+                        self.current_transaction_id,
+                        relay_int,
+                        amount,
+                        "completed"
+                    )
+                except Exception as e:
+                    print(f"Error logging bottle completion: {e}")
+
             if self.completed_relays.issuperset(self.expected_relays):
                 self.show_complete()
                 self._stop_timeout()

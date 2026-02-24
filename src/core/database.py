@@ -87,6 +87,43 @@ class Database:
             ON bottles(position)
         """)
 
+        # --- Transaction Logging Tables ---
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                drink_name TEXT NOT NULL,
+                msg_id TEXT UNIQUE,
+                status TEXT DEFAULT 'pending', -- pending, completed, failed, cancelled
+                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                end_time TIMESTAMP
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transaction_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id INTEGER NOT NULL,
+                bottle_id INTEGER NOT NULL,
+                amount_ml INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                end_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+                FOREIGN KEY (bottle_id) REFERENCES bottles(id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transaction_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id INTEGER NOT NULL,
+                event_type TEXT NOT NULL, -- TX, RX, ERR, INFO
+                message TEXT,
+                payload TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+            )
+        """)
+
     def _migrate_schema(self, conn):
         """Auto-migrate database schema for new columns"""
         cursor = conn.cursor()
@@ -270,6 +307,40 @@ class Database:
                 INSERT OR REPLACE INTO custom_limits (bottle_id, min_ml, max_ml)
                 VALUES (?, ?, ?)
             """, (bottle_id, min_ml, max_ml))
+
+    # --- Transaction Logging Operations ---
+    def start_transaction(self, drink_name, msg_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO transactions (drink_name, msg_id, status) VALUES (?, ?, 'pending')",
+                (drink_name, msg_id)
+            )
+            return cursor.lastrowid
+
+    def update_transaction_status(self, transaction_id, status):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE transactions SET status = ?, end_time = CURRENT_TIMESTAMP WHERE id = ?",
+                (status, transaction_id)
+            )
+
+    def add_transaction_item(self, transaction_id, bottle_id, amount_ml, status):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO transaction_items (transaction_id, bottle_id, amount_ml, status)
+                VALUES (?, ?, ?, ?)
+            """, (transaction_id, bottle_id, amount_ml, status))
+
+    def add_transaction_log(self, transaction_id, event_type, message, payload=None):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO transaction_logs (transaction_id, event_type, message, payload)
+                VALUES (?, ?, ?, ?)
+            """, (transaction_id, event_type, message, payload))
 
 
 def init_database(db_path=None):

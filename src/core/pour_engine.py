@@ -33,7 +33,7 @@ class PourEngine:
             recipes = self.db.get_recipes_for_drink(drink_id)
             
             if not recipes:
-                return False, "No recipe found for this drink", None
+                return False, "No recipe found for this drink", None, None
             
             # Build jobs from recipes
             jobs = []
@@ -45,6 +45,7 @@ class PourEngine:
                 
                 jobs.append({
                     "relay": recipe['bottle_id'],
+                    "amount_ml": recipe['amount_ml'],
                     "duration_sec": duration_sec
                 })
             
@@ -102,6 +103,7 @@ class PourEngine:
                 
                 jobs.append({
                     "relay": bottle['id'],
+                    "amount_ml": amount_ml,
                     "duration_sec": duration_sec
                 })
             

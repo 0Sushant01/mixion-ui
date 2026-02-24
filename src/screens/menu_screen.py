@@ -386,7 +386,7 @@ class MenuScreen(ctk.CTkFrame):
                     # Pass details...
                     if screen and payload:
                          relays = [job["relay"] for job in payload.get("jobs", [])]
-                         screen.start_transaction(payload, msg_id, relays)
+                         screen.start_transaction(payload, msg_id, relays, drink_name=drink['name'])
                 else:
                     self._show_error("Dispense Failed", message)
             self.after(0, finish)
