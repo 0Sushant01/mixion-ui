@@ -19,6 +19,7 @@ def ensure_setup():
     try:
         import customtkinter
         import paho.mqtt
+        import mpv
     except ImportError:
         print("Missing dependencies. Installing from requirements.txt...")
         try:

@@ -1,13 +1,4 @@
 # Mixion Drink Machine - Python Dependencies
 customtkinter>=5.2.0
-
-# Install with: pip install -r requirements.txt
-
-# MQTT Client - Communication with ESP32 hardware
 paho-mqtt>=1.6.1
-
-# MPV command-line tool is required for splash video playback.
-# This is a system dependency, not a Python package.
-#   Raspberry Pi/Ubuntu: sudo apt-get install mpv
-#   macOS: brew install mpv
-#   Windows: Download from https://mpv.io/installation/
+python-mpv>=1.0.1
