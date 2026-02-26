@@ -341,12 +341,12 @@ class ProcessingScreen(ctk.CTkFrame):
             relay_int = int(relay)
             self.completed_relays.add(relay_int)
             
-            # Find amount dispensed for this bottle
+            # Find amount dispensed for this bottle (removed from payload)
             amount = 0
             if self._current_payload:
                 for job in self._current_payload.get("jobs", []):
                     if job.get("relay") == relay_int:
-                        amount = job.get("amount_ml", 0)
+                        amount = job.get("amount_ml", 0) # Kept fallback in case it's passed differently
                         break
             
             # DB Logging: Record bottle completion
