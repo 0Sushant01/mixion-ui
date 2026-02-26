@@ -56,15 +56,14 @@ if __name__ == "__main__":
     # This now runs WHILE the video is playing
     app = MixionApp(video_path=video_path)
     
-    # 3. Wait for video to finish or be dismissed before showing the app
+    # 3. Auto-terminate splash video before showing the app so it doesn't freeze the Pi
     if video_data:
         process, temp_conf = video_data
         try:
-            # Simple poll loop to wait for video dismissal
-            while process.poll() is None:
-                time.sleep(0.1)
-        except KeyboardInterrupt:
+            # The app has finished loading its UI components, so we can forcefully close the video
             process.terminate()
+        except Exception as e:
+            print(f"Error terminating splash: {e}")
         finally:
             # Cleanup temp conf file
             if temp_conf and os.path.exists(temp_conf):

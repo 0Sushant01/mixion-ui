@@ -33,7 +33,7 @@ class MQTTClient:
             self.client.on_disconnect = self._on_disconnect
             self.client.on_message = self._on_message
             
-            self.client.connect(self.broker, self.port, keepalive=60)
+            self.client.connect_async(self.broker, self.port, keepalive=60)
             self.client.loop_start()
             
             return True
