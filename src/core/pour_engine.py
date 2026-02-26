@@ -45,8 +45,7 @@ class PourEngine:
                 )
                 
                 jobs.append({
-                    "relay": recipe['bottle_id'],
-                    "amount_ml": recipe['amount_ml'],
+                    "relay": recipe['position'],
                     "duration_sec": duration_sec
                 })
             
@@ -103,7 +102,7 @@ class PourEngine:
                 )
                 
                 jobs.append({
-                    "relay": bottle['id'],
+                    "relay": bottle['position'],
                     "duration_sec": duration_sec
                 })
             
