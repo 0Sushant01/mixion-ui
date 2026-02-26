@@ -27,10 +27,10 @@ class MenuScreen(ctk.CTkFrame):
         self.HEADER_HEIGHT = 100
         self.TITLE_FONT = ("Helvetica", 48, "bold")
         self.SUBTITLE_FONT = ("Helvetica", 24)
-        self.CARD_TITLE_FONT = ("Helvetica", 28, "bold")
-        self.CARD_PRICE_FONT = ("Helvetica", 24, "bold")
-        self.CARD_INGR_FONT = ("Helvetica", 16)
-        self.BTN_FONT = ("Helvetica", 20, "bold")
+        self.CARD_TITLE_FONT = ("Helvetica", 22, "bold")  # Reduced sizing
+        self.CARD_PRICE_FONT = ("Helvetica", 20, "bold")
+        self.CARD_INGR_FONT = ("Helvetica", 14)
+        self.BTN_FONT = ("Helvetica", 16, "bold")
         
         self.COLOR_PRIMARY = "#111827"    # Apple-like Premium Black
         self.COLOR_SUCCESS = "#059669"    # Emerald Green
@@ -38,25 +38,51 @@ class MenuScreen(ctk.CTkFrame):
         self.COLOR_TEXT = "#0F172A"       # Deep Slate
         self.COLOR_TEXT_SUB = "#64748B"   # Subtle Slate
 
+        # Pagination State
+        self._current_page = 0
+        self._items_per_page = 8
+
         # --- Layout ---
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=0) # Space for pagination
 
         # 1. Header
         self._build_header()
 
-        # 2. Content Grid
-        self.content = ctk.CTkScrollableFrame(
+        # 2. Content Grid (No scrollbar)
+        self.content = ctk.CTkFrame(
             self,
             fg_color="transparent",
-            corner_radius=0,
-            scrollbar_button_color="#E2E8F0",
-            scrollbar_button_hover_color="#CBD5E1"
+            corner_radius=0
         )
         self.content.grid(row=1, column=0, sticky="nsew", padx=40, pady=20)
         
-        # Grid Configuration: 3 Columns, responsive
-        self.content.grid_columnconfigure((0, 1, 2), weight=1, uniform="card")
+        # Grid Configuration: 4 Columns, responsive
+        self.content.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="card")
+
+        # 3. Pagination Footer
+        self.pagination_frame = ctk.CTkFrame(self, fg_color="transparent", height=60)
+        
+        self.prev_btn = ctk.CTkButton(
+            self.pagination_frame, 
+            text="◄ PREVIOUS", 
+            command=self._prev_page,
+            fg_color="#334155", hover_color="#475569",
+            font=self.BTN_FONT, width=140, height=45, corner_radius=22
+        )
+        self.next_btn = ctk.CTkButton(
+            self.pagination_frame, 
+            text="NEXT ►", 
+            command=self._next_page,
+            fg_color="#111827", hover_color="#334155",
+            font=self.BTN_FONT, width=140, height=45, corner_radius=22
+        )
+        self.page_label = ctk.CTkLabel(
+            self.pagination_frame, 
+            text="", 
+            font=("Helvetica", 18, "bold"), text_color=self.COLOR_TEXT_SUB
+        )
 
         self.empty_label = ctk.CTkLabel(
             self,
@@ -87,6 +113,19 @@ class MenuScreen(ctk.CTkFrame):
         """Called when no activity for 60s"""
         print("Menu idle timeout reached - returning to splash")
         self._on_splash()
+
+    def _prev_page(self):
+        self._reset_inactivity_timer()
+        if self._current_page > 0:
+            self._current_page -= 1
+            self._last_state = None
+            self.refresh()
+
+    def _next_page(self):
+        self._reset_inactivity_timer()
+        self._current_page += 1
+        self._last_state = None
+        self.refresh()
 
     def _build_header(self):
         self.header = ctk.CTkFrame(
@@ -170,8 +209,8 @@ class MenuScreen(ctk.CTkFrame):
         # Check if UI actually needs to rebuild
         import json
         try:
-            # Gather state of drinks and their recipes to detect any changes
-            current_state = {"drinks": drinks, "recipes": {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}}
+            # Include current page in state
+            current_state = {"page": self._current_page, "drinks": drinks, "recipes": {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}}
             state_str = json.dumps(current_state, sort_keys=True)
             if getattr(self, "_last_state", None) == state_str:
                 return  # Skip creating widgets, loading images, etc. as it is already up-to-date
@@ -187,19 +226,48 @@ class MenuScreen(ctk.CTkFrame):
         
         if not drinks:
             self.content.grid_forget()
+            self.pagination_frame.grid_forget()
             self.empty_label.place(relx=0.5, rely=0.5, anchor="center")
             return
         
         self.empty_label.place_forget()
-        self.content.grid(row=1, column=0, sticky="nsew", padx=40, pady=20)
+        self.content.grid(row=1, column=0, sticky="nsew", padx=40, pady=10)
 
         # Combine drinks and Custom option
         tiles = drinks + [{"id": "custom", "name": "Design Your Own", "price": None}]
 
-        for idx, drink in enumerate(tiles):
-            row = idx // 3
-            col = idx % 3
+        total_items = len(tiles)
+        max_page = max(0, (total_items - 1) // self._items_per_page)
+        
+        if self._current_page > max_page:
+            self._current_page = max_page
+            
+        start_idx = self._current_page * self._items_per_page
+        end_idx = start_idx + self._items_per_page
+        page_tiles = tiles[start_idx:end_idx]
+
+        for idx, drink in enumerate(page_tiles):
+            row = idx // 4
+            col = idx % 4
             self._create_kiosk_card(drink, row, col)
+
+        # Update Pagination Controls
+        if total_items > self._items_per_page:
+            self.pagination_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=(0, 20))
+            self.page_label.place(relx=0.5, rely=0.5, anchor="center")
+            self.page_label.configure(text=f"Page {self._current_page + 1} of {max_page + 1}")
+            
+            if self._current_page > 0:
+                self.prev_btn.pack(side="left")
+            else:
+                self.prev_btn.pack_forget()
+                
+            if self._current_page < max_page:
+                self.next_btn.pack(side="right")
+            else:
+                self.next_btn.pack_forget()
+        else:
+            self.pagination_frame.grid_forget()
 
     def _create_kiosk_card(self, drink, row, col):
         is_custom = drink["id"] == "custom"
@@ -222,7 +290,7 @@ class MenuScreen(ctk.CTkFrame):
 
         # 1. Image Area (Large)
         # We enforce a 4:3 aspect ratio premium image container
-        img_h = 240
+        img_h = 160
         drink_image = self._load_drink_image(drink["id"]) if not is_custom else None
         
         if drink_image:
@@ -250,7 +318,7 @@ class MenuScreen(ctk.CTkFrame):
             ctk.CTkLabel(
                 icon_frame,
                 text=icon,
-                font=("Segoe UI Emoji", 80),
+                font=("Segoe UI Emoji", 60),
                 text_color="#9CA3AF" if not is_custom else "#10B981"
             ).place(relx=0.5, rely=0.5, anchor="center")
 
@@ -316,9 +384,9 @@ class MenuScreen(ctk.CTkFrame):
             fg_color=btn_color,
             hover_color=btn_hover,
             font=self.BTN_FONT,
-            height=56, # Tall touch target
-            corner_radius=28,
-            width=140 if not is_custom else 280 # Full width for custom if no price
+            height=44, # Tall touch target
+            corner_radius=22,
+            width=100 if not is_custom else 240 # Full width for custom if no price
         )
         btn.pack(side="right" if not is_custom else "top", fill="x" if is_custom else "none")
         self._drink_buttons.append(btn)
@@ -335,7 +403,7 @@ class MenuScreen(ctk.CTkFrame):
                 try:
                     pil_img = Image.open(path)
                     # Kiosk resizing: larger and premium
-                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(340, 260))
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(240, 180))
                     self._image_cache[drink_id] = ctk_img
                     return ctk_img
                 except Exception as e:
