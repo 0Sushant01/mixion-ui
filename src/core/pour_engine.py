@@ -107,7 +107,7 @@ class PourEngine:
                     "duration_sec": duration_sec
                 })
             
-            if not jobs:
+            if not jobs:  #
                 return False, "No valid bottles selected", None
             
             # Send MQTT command
