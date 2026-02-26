@@ -140,8 +140,12 @@ class MQTTClient:
         try:
             with self.lock:
                 result = self.client.publish(topic, json.dumps(payload), qos=1)
-                result.wait_for_publish()
+                result.wait_for_publish(timeout=5.0)
             
+            if not result.is_published():
+                print(f"Warning: Dispense command publish timed out or failed.")
+                return False, None, payload
+
             print(f"Published dispense command: {payload}")
             return True, msg_id, payload
             
@@ -158,7 +162,10 @@ class MQTTClient:
             payload_json = json.dumps(payload)
             with self.lock:
                 result = self.client.publish(topic, payload_json, qos=1)
-                result.wait_for_publish()
+                # WARNING: Do NOT use result.wait_for_publish() here!
+                # Since this function is called periodically on the main Tkinter thread,
+                # if the MQTT broker drops packets, wait_for_publish blocks the UI completely
+                # and causes the Raspberry Pi screen to "freeze" or "lag" over time.
             print(f"Status request sent on {topic}: {payload_json}")
             return True
         except Exception as e:

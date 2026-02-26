@@ -226,6 +226,7 @@ class ProcessingScreen(ctk.CTkFrame):
             self.controller.database.add_transaction_log(self.current_transaction_id, "ERR", "DISPENSE_ERROR", error_message)
     
     def reset(self):
+        self.stop_animation()
         self.message_label.configure(text="Preparing your drink", text_color=self.COLOR_TEXT)
         self.status_label.configure(text="Dispensing ingredients...")
         self.done_btn.pack_forget()

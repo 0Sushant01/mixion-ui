@@ -23,20 +23,20 @@ class MenuScreen(ctk.CTkFrame):
         self._idle_timer_id = None
         self._idle_timeout_ms = 60000  # 60 seconds
 
-        # --- Constants for Kiosk UI ---
+        # --- Constants for Premium Kiosk UI ---
         self.HEADER_HEIGHT = 100
-        self.TITLE_FONT = ("Roboto", 48, "bold")
-        self.SUBTITLE_FONT = ("Roboto", 24)
-        self.CARD_TITLE_FONT = ("Roboto", 24, "bold")
-        self.CARD_PRICE_FONT = ("Roboto", 22, "bold")
-        self.CARD_INGR_FONT = ("Roboto", 16)
-        self.BTN_FONT = ("Roboto", 18, "bold")
+        self.TITLE_FONT = ("Helvetica", 48, "bold")
+        self.SUBTITLE_FONT = ("Helvetica", 24)
+        self.CARD_TITLE_FONT = ("Helvetica", 28, "bold")
+        self.CARD_PRICE_FONT = ("Helvetica", 24, "bold")
+        self.CARD_INGR_FONT = ("Helvetica", 16)
+        self.BTN_FONT = ("Helvetica", 20, "bold")
         
-        self.COLOR_PRIMARY = "#2563EB"    # Deep Blue
+        self.COLOR_PRIMARY = "#111827"    # Apple-like Premium Black
         self.COLOR_SUCCESS = "#059669"    # Emerald Green
         self.COLOR_DANGER = "#DC2626"     # Red
-        self.COLOR_TEXT = "#111827"       # Almost Black
-        self.COLOR_TEXT_SUB = "#6B7280"   # Gray
+        self.COLOR_TEXT = "#0F172A"       # Deep Slate
+        self.COLOR_TEXT_SUB = "#64748B"   # Subtle Slate
 
         # --- Layout ---
         self.grid_columnconfigure(0, weight=1)
@@ -164,12 +164,26 @@ class MenuScreen(ctk.CTkFrame):
 
     def refresh(self):
         self._reset_inactivity_timer()
+
+        drinks = self.database.get_active_drinks()
+        
+        # Check if UI actually needs to rebuild
+        import json
+        try:
+            # Gather state of drinks and their recipes to detect any changes
+            current_state = {"drinks": drinks, "recipes": {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}}
+            state_str = json.dumps(current_state, sort_keys=True)
+            if getattr(self, "_last_state", None) == state_str:
+                return  # Skip creating widgets, loading images, etc. as it is already up-to-date
+            self._last_state = state_str
+            self._recipes_cache = current_state["recipes"]  # Cache for UI generation
+        except Exception as e:
+            print(f"Error checking state cache: {e}")
+            self._recipes_cache = {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}
+
         for widget in self.content.winfo_children():
             widget.destroy()
         self._drink_buttons.clear()
-        # No need to clear cache here
-
-        drinks = self.database.get_active_drinks()
         
         if not drinks:
             self.content.grid_forget()
@@ -194,7 +208,7 @@ class MenuScreen(ctk.CTkFrame):
         bg_color = "white" if not is_custom else "#ECFDF5" # Mint hint for custom
         border_color = "#E5E7EB" if not is_custom else "#10B981"
         btn_color = self.COLOR_PRIMARY if not is_custom else self.COLOR_SUCCESS
-        btn_hover = "#1D4ED8" if not is_custom else "#047857" # Darker shades
+        btn_hover = "#334155" if not is_custom else "#047857" # Darker shades
 
         # Card Container
         card = ctk.CTkFrame(
@@ -207,7 +221,8 @@ class MenuScreen(ctk.CTkFrame):
         card.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
         # 1. Image Area (Large)
-        img_h = 220
+        # We enforce a 4:3 aspect ratio premium image container
+        img_h = 240
         drink_image = self._load_drink_image(drink["id"]) if not is_custom else None
         
         if drink_image:
@@ -258,7 +273,7 @@ class MenuScreen(ctk.CTkFrame):
         info_text = ""
         if not is_custom:
             try:
-                recipes = self.database.get_recipes_for_drink(drink["id"])
+                recipes = self._recipes_cache.get(drink["id"], [])
                 ing_names = [r['bottle_name'] for r in recipes]
                 info_text = ", ".join(ing_names) if ing_names else "Ingredients unavailable"
             except:
@@ -319,8 +334,8 @@ class MenuScreen(ctk.CTkFrame):
             if os.path.exists(path):
                 try:
                     pil_img = Image.open(path)
-                    # Kiosk resizing: larger!
-                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(320, 240))
+                    # Kiosk resizing: larger and premium
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(340, 260))
                     self._image_cache[drink_id] = ctk_img
                     return ctk_img
                 except Exception as e:
