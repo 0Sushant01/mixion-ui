@@ -140,6 +140,13 @@ class Database:
             """)
             print("  ✓ Migration complete: flow_rate column added")
 
+        # --- Ensure logging tables exist (for cases where DB existed before logging update) ---
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'")
+        if not cursor.fetchone():
+            print("  → Migrating: Creating transaction logging tables...")
+            self._create_tables(conn)
+            print("  ✓ Migration complete: Logging tables created")
+
     def _insert_defaults(self, conn):
         cursor = conn.cursor()
 

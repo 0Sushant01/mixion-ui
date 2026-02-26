@@ -2,6 +2,7 @@
 Pour Engine
 Business logic for converting ml to seconds and sending MQTT commands
 """
+import config
 
 
 class PourEngine:
@@ -132,12 +133,13 @@ class PourEngine:
         Returns:
             float: Duration in seconds (rounded to 2 decimal places)
         
-        Formula: duration_sec = (amount_ml / flow_rate_ml_min) * 60
+        Formula: duration_sec = ((amount_ml / flow_rate_ml_min) * 60) + latency_offset
         """
         if flow_rate <= 0:
             raise ValueError("Flow rate must be greater than 0")
         
         # Convert flow_rate from ml/min to ml/sec by dividing by 60
         # Then calculate duration: amount_ml / (flow_rate / 60) = (amount_ml * 60) / flow_rate
-        duration = (amount_ml * 60) / flow_rate
+        # We add a latency offset (e.g. 0.5s) to account for pump ramp-up/latency
+        duration = ((amount_ml * 60) / flow_rate) + .3
         return round(duration, 2)

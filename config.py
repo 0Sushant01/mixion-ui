@@ -20,6 +20,7 @@ STATUS_REQUEST_PAYLOAD = {"cmd": "status"}
 
 # Dispense workflow
 DISPENSE_TIMEOUT_SEC = 30
+PUMP_LATENCY_OFFSET_SEC = 0.5
 
 # Database Configuration
 DATABASE_PATH = "database/mixion.db"

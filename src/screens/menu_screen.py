@@ -339,7 +339,8 @@ class MenuScreen(ctk.CTkFrame):
              return
         
         self._reset_inactivity_timer()
-        self._send_dispense(lambda: self.controller.pour_engine.dispense_drink(drink['id']))
+        self._reset_inactivity_timer()
+        self._send_dispense(lambda: self.controller.pour_engine.dispense_drink(drink['id']), drink_name=drink['name'])
 
     def _on_custom(self):
         if not self._is_device_online():
@@ -402,7 +403,7 @@ class MenuScreen(ctk.CTkFrame):
         ).pack(pady=30)
 
     # --- Workflow Helpers ---
-    def _send_dispense(self, action):
+    def _send_dispense(self, action, drink_name=None):
         def worker():
             success, message, msg_id, payload = action()
             def finish():
@@ -413,7 +414,7 @@ class MenuScreen(ctk.CTkFrame):
                     # Pass details...
                     if screen and payload:
                          relays = [job["relay"] for job in payload.get("jobs", [])]
-                         screen.start_transaction(payload, msg_id, relays, drink_name=drink['name'])
+                         screen.start_transaction(payload, msg_id, relays, drink_name=drink_name)
                 else:
                     self._show_error("Dispense Failed", message)
             self.after(0, finish)
