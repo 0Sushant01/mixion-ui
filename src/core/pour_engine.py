@@ -104,7 +104,6 @@ class PourEngine:
                 
                 jobs.append({
                     "relay": bottle['id'],
-                    "amount_ml": amount_ml,
                     "duration_sec": duration_sec
                 })
             
