@@ -95,7 +95,17 @@ class CustomMixScreen(ctk.CTkFrame):
 
         for bottle in bottles:
             limit = limits.get(bottle["id"], {"min_ml": 0, "max_ml": 150})
-            self._add_row(bottle, limit["min_ml"], limit["max_ml"])
+            
+            # Dynamic max limit capped at current available volume
+            available_vol = bottle.get("current_volume_ml", 0.0)
+            dynamic_max = min(limit["max_ml"], int(available_vol))
+            
+            # Disable ingredient entirely if no volume is left
+            # OR if we can't even meet the minimum required ml limit
+            if dynamic_max <= 0 or dynamic_max <= limit["min_ml"]:
+                continue
+                
+            self._add_row(bottle, limit["min_ml"], dynamic_max)
 
     def _add_row(self, bottle, min_ml, max_ml):
         row = ctk.CTkFrame(self.rows_frame, fg_color="#F8FAFC", corner_radius=16, border_width=1, border_color="#E2E8F0")

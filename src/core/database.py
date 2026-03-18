@@ -260,6 +260,15 @@ class Database:
                 (delta, bottle_id)
             )
 
+    def is_drink_available(self, drink_id):
+        """Returns True if all required ingredients have sufficient volume."""
+        recipes = self.get_recipes_for_drink(drink_id)
+        for r in recipes:
+            bottle = self.get_bottle_by_id(r['bottle_id'])
+            if not bottle or bottle['current_volume_ml'] < r['amount_ml']:
+                return False
+        return True
+
     # Drink operations
     def get_all_drinks(self):
         with self.get_connection() as conn:

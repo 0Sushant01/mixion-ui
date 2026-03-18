@@ -373,7 +373,12 @@ class MenuScreen(ctk.CTkFrame):
             except:
                 info_text = "Standard Mix"
         else:
-            info_text = "Create your perfect blend from available ingredients."
+            # Evaluate if any ingredients exist for a custom mix
+            if not any(vol > 0 for vol in self._bottle_vols.values()):
+                is_available = False
+                info_text = "Not Available: No ingredients"
+            else:
+                info_text = "Create your perfect blend from available ingredients."
 
         # Colors override if unavailable
         if not is_available:
@@ -406,8 +411,8 @@ class MenuScreen(ctk.CTkFrame):
 
         # Button
         btn_text = "ORDER" if not is_custom else "START"
-        if not is_available and not is_custom:
-            btn_text = "EMPTY"
+        if not is_available:
+            btn_text = "Not Available"
             
         command = (self._on_custom if is_custom else lambda d=drink: self._on_drink(d))
 
