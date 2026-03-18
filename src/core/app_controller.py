@@ -7,6 +7,7 @@ from src.core.pour_engine import PourEngine
 from src.screens.custom_screen import CustomMixScreen
 from src.screens.menu_screen import MenuScreen
 from src.screens.processing_screen import ProcessingScreen
+from src.screens.bottle_update_screen import BottleUpdateScreen
 
 
 class MixionApp(tk.Tk):
@@ -41,6 +42,7 @@ class MixionApp(tk.Tk):
             "menu": MenuScreen(self._container, self),
             "custom": CustomMixScreen(self._container, self),
             "processing": ProcessingScreen(self._container, self),
+            "bottle_update": BottleUpdateScreen(self._container, self),
         }
 
         for screen in self._screens.values():

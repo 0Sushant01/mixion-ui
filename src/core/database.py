@@ -42,6 +42,8 @@ class Database:
                 name TEXT NOT NULL,
                 position INTEGER NOT NULL UNIQUE,
                 flow_rate REAL NOT NULL DEFAULT 600.0,
+                current_volume_ml REAL NOT NULL DEFAULT 1000.0,
+                capacity_ml REAL NOT NULL DEFAULT 1000.0,
                 enabled INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -140,6 +142,18 @@ class Database:
             """)
             print("  ✓ Migration complete: flow_rate column added")
 
+        if 'current_volume_ml' not in columns:
+            print("  → Migrating: Adding current_volume_ml and capacity_ml columns to bottles table...")
+            cursor.execute("""
+                ALTER TABLE bottles 
+                ADD COLUMN current_volume_ml REAL NOT NULL DEFAULT 1000.0
+            """)
+            cursor.execute("""
+                ALTER TABLE bottles 
+                ADD COLUMN capacity_ml REAL NOT NULL DEFAULT 1000.0
+            """)
+            print("  ✓ Migration complete: volume tracking columns added")
+
         # --- Ensure logging tables exist (for cases where DB existed before logging update) ---
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'")
         if not cursor.fetchone():
@@ -155,12 +169,12 @@ class Database:
 
         if bottle_count == 0:
             default_bottles = [
-                ("Bottle A", 1, 600.0),
-                ("Bottle B", 2, 600.0),
-                ("Bottle C", 3, 600.0),
+                ("Bottle A", 1, 600.0, 1000.0, 1000.0),
+                ("Bottle B", 2, 600.0, 1000.0, 1000.0),
+                ("Bottle C", 3, 600.0, 1000.0, 1000.0),
             ]
             cursor.executemany(
-                "INSERT INTO bottles (name, position, flow_rate) VALUES (?, ?, ?)",
+                "INSERT INTO bottles (name, position, flow_rate, current_volume_ml, capacity_ml) VALUES (?, ?, ?, ?, ?)",
                 default_bottles
             )
             print("Inserted default bottles")
@@ -220,6 +234,31 @@ class Database:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM bottles WHERE id = ?", (bottle_id,))
+
+    # Volume operations
+    def get_volume(self, bottle_id):
+        bottle = self.get_bottle_by_id(bottle_id)
+        return bottle["current_volume_ml"] if bottle else 0.0
+
+    def get_capacity(self, bottle_id):
+        bottle = self.get_bottle_by_id(bottle_id)
+        return bottle["capacity_ml"] if bottle else 0.0
+
+    def set_volume(self, bottle_id, value):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE bottles SET current_volume_ml = ? WHERE id = ?",
+                (value, bottle_id)
+            )
+
+    def update_volume(self, bottle_id, delta):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE bottles SET current_volume_ml = current_volume_ml + ? WHERE id = ?",
+                (delta, bottle_id)
+            )
 
     # Drink operations
     def get_all_drinks(self):

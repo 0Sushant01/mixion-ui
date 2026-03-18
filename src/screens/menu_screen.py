@@ -172,6 +172,21 @@ class MenuScreen(ctk.CTkFrame):
         )
         self.status_indicator.pack(side="left", padx=(0, 30))
 
+        # Refill Button
+        self.refill_btn = ctk.CTkButton(
+            status_frame,
+            text="Refill",
+            command=self._on_refill,
+            fg_color="#F1F5F9",
+            hover_color="#E2E8F0",
+            text_color="#64748B",
+            width=80,
+            height=40,
+            font=("Roboto", 14),
+            corner_radius=20
+        )
+        self.refill_btn.pack(side="left", padx=(0, 10))
+
         # Admin controls (subtle)
         self.splash_btn = ctk.CTkButton(
             status_frame,
@@ -205,12 +220,14 @@ class MenuScreen(ctk.CTkFrame):
         self._reset_inactivity_timer()
 
         drinks = self.database.get_active_drinks()
+        bottles = self.database.get_all_bottles()
+        self._bottle_vols = {b["id"]: b["current_volume_ml"] for b in bottles}
         
         # Check if UI actually needs to rebuild
         import json
         try:
-            # Include current page in state
-            current_state = {"page": self._current_page, "drinks": drinks, "recipes": {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}}
+            # Include current page and bottle volumes in state
+            current_state = {"page": self._current_page, "drinks": drinks, "recipes": {d["id"]: self.database.get_recipes_for_drink(d["id"]) for d in drinks}, "vols": self._bottle_vols}
             state_str = json.dumps(current_state, sort_keys=True)
             if getattr(self, "_last_state", None) == state_str:
                 return  # Skip creating widgets, loading images, etc. as it is already up-to-date
@@ -337,23 +354,37 @@ class MenuScreen(ctk.CTkFrame):
             anchor="w"
         ).pack(fill="x")
 
-        # Ingredients / Approx Info
+        # Ingredients / Approx Info & Availability Check
         info_text = ""
+        is_available = True
         if not is_custom:
             try:
                 recipes = self._recipes_cache.get(drink["id"], [])
                 ing_names = [r['bottle_name'] for r in recipes]
                 info_text = ", ".join(ing_names) if ing_names else "Ingredients unavailable"
+                
+                # Check sufficient volume
+                for r in recipes:
+                    current_vol = self._bottle_vols.get(r['bottle_id'], 0)
+                    if current_vol < r['amount_ml']:
+                        is_available = False
+                        info_text = f"Unavailable: Low {r['bottle_name']}"
+                        break
             except:
                 info_text = "Standard Mix"
         else:
             info_text = "Create your perfect blend from available ingredients."
 
+        # Colors override if unavailable
+        if not is_available:
+            btn_color = "#9CA3AF"
+            btn_hover = "#9CA3AF"
+            
         ctk.CTkLabel(
             text_frame,
             text=info_text,
             font=self.CARD_INGR_FONT,
-            text_color=self.COLOR_TEXT_SUB,
+            text_color=self.COLOR_TEXT_SUB if is_available else self.COLOR_DANGER,
             wraplength=280,
             justify="left",
             anchor="w",
@@ -370,17 +401,21 @@ class MenuScreen(ctk.CTkFrame):
                 action_row,
                 text=price_val,
                 font=self.CARD_PRICE_FONT,
-                text_color=self.COLOR_SUCCESS
+                text_color=self.COLOR_SUCCESS if is_available else "#9CA3AF"
             ).pack(side="left")
 
         # Button
         btn_text = "ORDER" if not is_custom else "START"
+        if not is_available and not is_custom:
+            btn_text = "EMPTY"
+            
         command = (self._on_custom if is_custom else lambda d=drink: self._on_drink(d))
 
         btn = ctk.CTkButton(
             action_row,
             text=btn_text,
             command=command,
+            state="normal" if is_available else "disabled",
             fg_color=btn_color,
             hover_color=btn_hover,
             font=self.BTN_FONT,
@@ -431,6 +466,10 @@ class MenuScreen(ctk.CTkFrame):
             return
         self._reset_inactivity_timer()
         self.controller.show_screen("custom")
+
+    def _on_refill(self):
+        self._reset_inactivity_timer()
+        self.controller.show_screen("bottle_update")
 
     def _on_exit(self):
         # Cleanup

@@ -36,6 +36,12 @@ class PourEngine:
             if not recipes:
                 return False, "No recipe found for this drink", None, None
             
+            # Validate volumes
+            for recipe in recipes:
+                current_vol = self.db.get_volume(recipe['bottle_id'])
+                if recipe['amount_ml'] > current_vol:
+                    return False, f"Insufficient volume for {recipe['bottle_name']}. Has {current_vol}ml, needs {recipe['amount_ml']}ml.", None, None
+            
             # Build jobs from recipes
             jobs = []
             for recipe in recipes:
@@ -53,6 +59,10 @@ class PourEngine:
             success, msg_id, payload = self.mqtt.publish_dispense_command(jobs)
             
             if success:
+                # Deduct volumes from database
+                for recipe in recipes:
+                    self.db.update_volume(recipe['bottle_id'], -recipe['amount_ml'])
+                    
                 return True, "Dispense command sent successfully", msg_id, payload
             else:
                 return False, "Failed to send MQTT command", None, payload
@@ -83,7 +93,7 @@ class PourEngine:
                     if amount_ml > limits['max_ml']:
                         return False, f"Amount too high for bottle {bottle_id}", None
             
-            # Build jobs
+            # Build jobs and validate volumes
             jobs = []
             for bottle_id, amount_ml in bottle_amounts.items():
                 if amount_ml <= 0:
@@ -95,6 +105,10 @@ class PourEngine:
                 
                 if not bottle['enabled']:
                     return False, f"Bottle {bottle['name']} is disabled", None
+                
+                # Check volume
+                if amount_ml > bottle['current_volume_ml']:
+                    return False, f"Insufficient volume for {bottle['name']}. Has {bottle['current_volume_ml']}ml, needs {amount_ml}ml.", None
                 
                 duration_sec = self._calculate_duration(
                     amount_ml,
@@ -113,6 +127,11 @@ class PourEngine:
             success, msg_id, payload = self.mqtt.publish_dispense_command(jobs)
             
             if success:
+                # Deduct volumes
+                for bottle_id, amount_ml in bottle_amounts.items():
+                    if amount_ml > 0:
+                        self.db.update_volume(bottle_id, -amount_ml)
+                        
                 return True, "Custom dispense command sent successfully", msg_id, payload
             else:
                 return False, "Failed to send MQTT command", None, payload
