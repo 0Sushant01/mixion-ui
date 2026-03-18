@@ -367,7 +367,16 @@ class ProcessingScreen(ctk.CTkFrame):
 
     def _start_timeout(self):
         self._stop_timeout()
-        self._deadline = time.time() + config.DISPENSE_TIMEOUT_SEC
+        
+        # Calculate dynamic timeout based on maximum pour duration + 10 seconds buffer
+        timeout_duration = getattr(config, "DISPENSE_TIMEOUT_SEC", 30.0) # Fallback
+        
+        if self._current_payload and "jobs" in self._current_payload:
+            durations = [float(job.get("duration_sec", 0)) for job in self._current_payload["jobs"]]
+            if durations:
+                timeout_duration = max(durations) + 10.0
+                
+        self._deadline = time.time() + timeout_duration
         self._timeout_id = self.after(500, self._check_timeout)
 
     def _stop_timeout(self):
